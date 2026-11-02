@@ -1,0 +1,163 @@
+﻿@model SharpMind.Models.Korisnik
+@{
+    ViewData["Title"] = "Izmena korisnika";
+    string bojaModela = "#FF8C00";
+
+    bool nijeAdmin = !User.IsInRole("Admin");
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg border border-2 border-dark" style="border-radius: 15px; overflow: hidden;">
+
+                <div class="card-header text-white py-3 text-center border-bottom border-2 border-dark" style="background-color:@bojaModela;">
+                    <h5 class="mb-0 fw-bold text-uppercase">
+                        <i class="bi bi-pencil-square me-2"></i> Izmeni Korisnika
+                    </h5>
+                </div>
+
+                <div class="card-body p-5 bg-white">
+                    <form asp-action="Edit" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <input type="hidden" name="KorisnikId" value="@Model.KorisnikId" />
+
+                        <div class="mb-5 text-center">
+                            <div class="badge bg-dark px-3 py-2 shadow-sm border border-1 border-white">
+                                <span class="text-uppercase small fw-bold">Trenutni ID:</span> #@Model.KorisnikId
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Korisničko ime</label>
+                            <input name="KorisnikIme" value="@Model.KorisnikIme" class="form-control form-control-lg border-2 border-dark shadow-sm" style="border-radius: 8px;" required />
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Lozinka</label>
+                            <input name="KorisnikLozinka" value="@Model.KorisnikLozinka" type="text" class="form-control form-control-lg border-2 border-dark shadow-sm" style="border-radius: 8px;" required />
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Uloga</label>
+                            @if (nijeAdmin)
+                            {
+                                <input type="text" class="form-control form-control-lg border-2 border-dark shadow-sm bg-light fw-bold text-secondary"
+                                       value="@(Model.Uloga?.UlogaNaziv ?? "Nije definisano") (Zaključano)" disabled style="border-radius: 8px;" />
+                                <input type="hidden" name="UlogaId" value="@Model.UlogaId" />
+                            }
+                            else
+                            {
+                                <select name="UlogaId" class="form-select form-select-lg border-2 border-dark shadow-sm" style="border-radius: 8px;" required>
+                                    @foreach (var u in ViewBag.Uloge)
+                                    {
+                                        <option value="@u.UlogaId" selected="@(Model.UlogaId == u.UlogaId)">
+                                            @u.UlogaNaziv
+                                        </option>
+                                    }
+                                </select>
+                            }
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Datum registracije</label>
+                            @if (nijeAdmin)
+                            {
+                                <input type="text" class="form-control form-control-lg border-2 border-dark shadow-sm bg-light fw-bold text-secondary"
+                                       value="@Model.KorisnikDatumRegistracije.ToString("dd.MM.yyyy") (Zaključano)" disabled style="border-radius: 8px;" />
+                                <input type="hidden" name="KorisnikDatumRegistracije" value="@Model.KorisnikDatumRegistracije.ToString("yyyy-MM-dd")" />
+                            }
+                            else
+                            {
+                                <input name="KorisnikDatumRegistracije" type="date"
+                                       class="form-control form-control-lg border-2 border-dark shadow-sm"
+                                       style="border-radius: 8px;"
+                                       value="@Model.KorisnikDatumRegistracije.ToString("yyyy-MM-dd")" required />
+                            }
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Nivo</label>
+                            @if (nijeAdmin)
+                            {
+                                <input type="text" class="form-control form-control-lg border-2 border-dark shadow-sm bg-light fw-bold text-secondary"
+                                       value="@(Model.Nivo?.NazivNivoa ?? "Bez nivoa") (Zaključano)" disabled style="border-radius: 8px;" />
+                                <input type="hidden" name="NivoId" value="@Model.NivoId" />
+                            }
+                            else
+                            {
+                                <select name="NivoId" class="form-select form-select-lg border-2 border-dark shadow-sm" style="border-radius: 8px;" required>
+                                    @foreach (var n in ViewBag.Nivoi)
+                                    {
+                                        <option value="@n.NivoId" selected="@(Model.NivoId == n.NivoId)">
+                                            @n.NazivNivoa
+                                        </option>
+                                    }
+                                </select>
+                            }
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Profesor</label>
+                            @if (nijeAdmin)
+                            {
+                                <input type="text" class="form-control form-control-lg border-2 border-dark shadow-sm bg-light fw-bold text-secondary"
+                                       value="@(Model.ProfesorId != null ? "Dodijeljen profesor" : "Bez profesora") (Zaključano)" disabled style="border-radius: 8px;" />
+                                <input type="hidden" name="ProfesorId" value="@Model.ProfesorId" />
+                            }
+                            else
+                            {
+                                <select name="ProfesorId" class="form-select form-select-lg border-2 border-dark shadow-sm" style="border-radius: 8px;">
+                                    <option value="">-- Bez profesora --</option>
+                                    @foreach (var p in ViewBag.Profesori)
+                                    {
+                                        <option value="@p.KorisnikId" selected="@(Model.ProfesorId == p.KorisnikId)">
+                                            @p.KorisnikIme
+                                        </option>
+                                    }
+                                </select>
+                            }
+                        </div>
+
+                        <div class="mb-5">
+                            <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Ukupno poena</label>
+                            @if (nijeAdmin)
+                            {
+                                <input type="text" class="form-control form-control-lg border-2 border-dark shadow-sm bg-light fw-bold text-secondary"
+                                       value="@Model.UkupnoPoena (Zaključano)" disabled style="border-radius: 8px;" />
+                                <input type="hidden" name="UkupnoPoena" value="@Model.UkupnoPoena" />
+                            }
+                            else
+                            {
+                                <input name="UkupnoPoena" type="number" value="@Model.UkupnoPoena" class="form-control form-control-lg border-2 border-dark shadow-sm" style="border-radius: 8px;" />
+                            }
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn text-white fw-bold py-3 shadow text-uppercase" style="background-color:@bojaModela; border-radius: 8px;">
+                                <i class="bi bi-check-lg me-2"></i> Sačuvaj izmene
+                            </button>
+
+                            <a href="/Korisnici/Index" class="btn btn-dark fw-bold py-3 shadow text-uppercase mt-1" style="border-radius: 8px;">
+                                <i class="bi bi-arrow-left me-2"></i> Nazad na listu
+                            </a>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fw-black {
+        font-weight: 900 !important;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: @bojaModela !important;
+        box-shadow: 0 0 0 0.25rem rgba(255, 140, 0, 0.15) !important;
+    }
+</style>

@@ -1,0 +1,75 @@
+﻿@model SharpMind.Models.Uloga
+@{
+    ViewData["Title"] = "Izmena uloge";
+    string boja = "#191970";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card shadow-lg border border-2 border-dark" style="border-radius: 15px; overflow: hidden;">
+
+                <div class="card-header text-white py-3 text-center border-bottom border-2 border-dark" style="background-color:@boja;">
+                    <h5 class="mb-0 fw-bold text-uppercase">
+                        <i class="bi bi-pencil-square me-2"></i> Izmeni Ulogu
+                    </h5>
+                </div>
+
+                <div class="card-body p-5 bg-white">
+                    <form asp-controller="Uloge" asp-action="Edit" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div asp-validation-summary="ModelOnly" class="text-danger fw-bold small mb-3"></div>
+
+                        <input type="hidden" name="UlogaId" value="@Model.UlogaId" />
+
+                        <div class="mb-5 text-center">
+                            <div class="badge bg-dark px-3 py-2 mb-3 shadow-sm border border-1 border-white">
+                                <span class="text-uppercase small fw-bold">Trenutni ID:</span> #@Model.UlogaId
+                            </div>
+
+                            <div class="text-start">
+                                <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Naziv uloge</label>
+                                <input type="text"
+                                       name="UlogaNaziv"
+                                       value="@Model.UlogaNaziv"
+                                       class="form-control form-control-lg border-2 shadow-sm @(ViewData.ModelState["UlogaNaziv"]?.Errors.Count > 0 ? "border-danger is-invalid" : "border-dark")"
+                                       required
+                                       style="border-radius: 8px;" />
+
+                                @if (ViewData.ModelState["UlogaNaziv"]?.Errors.Count > 0)
+                                {
+                                    <div class="text-danger fw-bold small mt-2">
+                                        <i class="bi bi-exclamation-octagon-fill"></i>
+                                        @ViewData.ModelState["UlogaNaziv"].Errors[0].ErrorMessage
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-3">
+                            <button type="submit" class="btn text-white fw-bold py-3 shadow text-uppercase" style="background-color:@boja; border-radius: 8px;">
+                                <i class="bi bi-check-lg me-2"></i> Sačuvaj izmene
+                            </button>
+
+                            <a href="/Uloge/Index" class="btn btn-dark fw-bold py-3 shadow text-uppercase" style="border-radius: 8px;">
+                                <i class="bi bi-arrow-left me-2"></i> Nazad na listu
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fw-black {
+        font-weight: 900 !important;
+    }
+
+    .form-control:focus {
+        border-color: @boja !important;
+        box-shadow: 0 0 0 0.25rem rgba(25, 25, 112, 0.1);
+    }
+</style>

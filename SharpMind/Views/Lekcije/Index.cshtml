@@ -1,0 +1,191 @@
+﻿@model IEnumerable<SharpMind.Models.Lekcija>
+
+@{
+    ViewData["Title"] = "Lekcije";
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+    int pageSize = ViewBag.CurrentPageSize ?? 25;
+    int totalItems = ViewBag.TotalItems ?? 0;
+    string currentSort = ViewBag.CurrentSort ?? "id_desc";
+    string bojaModela = "#228B22";
+
+    int startItem = totalItems == 0 ? 0 : ((currentPage - 1) * pageSize) + 1;
+    int endItem = Math.Min(startItem + Model.Count() - 1, totalItems);
+}
+
+<style>
+    .lekcija-theme {
+        background-color: @bojaModela !important;
+        color: white !important;
+        border: 1px solid @bojaModela !important;
+    }
+
+    .table-lekcija-header th {
+        background-color: @bojaModela !important;
+        color: white !important;
+        border: none !important;
+    }
+
+    .lekcija-text {
+        color: @bojaModela !important;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(34, 139, 34, 0.08);
+    }
+
+    .page-item.active .page-link {
+        background-color: @bojaModela !important;
+        border-color: @bojaModela !important;
+        color: white !important;
+    }
+
+    .page-link {
+        color: @bojaModela;
+        font-weight: bold;
+    }
+
+    .text-truncate-custom {
+        max-width: 200px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+</style>
+
+<div class="container-fluid mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark">
+                <i class="bi bi-book lekcija-text"></i> Lekcije
+            </h2>
+            <p class="text-muted mb-0">
+                Prikazano <span class="fw-bold text-dark">@startItem - @endItem</span>
+                od ukupno <span class="fw-bold text-dark">@totalItems</span> lekcija
+            </p>
+        </div>
+
+        <div class="d-flex gap-3 align-items-center">
+            <div class="d-flex align-items-center bg-white border rounded px-2 shadow-sm">
+                <label class="me-2 small fw-bold text-muted">Prikaži:</label>
+                <select id="pageSizeSelect" class="form-select form-select-sm border-0" onchange="changePageSize()">
+                    <option value="25" selected="@(pageSize == 25)">25</option>
+                    <option value="50" selected="@(pageSize == 50)">50</option>
+                    <option value="100" selected="@(pageSize == 100)">100</option>
+                </select>
+            </div>
+
+            <a href="/Lekcije/Create" class="btn shadow-sm px-4 lekcija-theme">
+                <i class="bi bi-plus-circle"></i> Nova Lekcija
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow border-0" style="border-radius:12px; overflow: hidden;">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-lekcija-header">
+                        <tr>
+                            <th class="ps-4">
+                                <a href="@Url.Action("Index", new { sortOrder = ViewBag.IdSortParm, pageSize = pageSize, page = 1 })"
+                                   class="text-decoration-none text-white d-flex align-items-center">
+                                    ID <i class="bi @(currentSort == "id_asc" ? "bi-sort-numeric-up" : "bi-sort-numeric-down-alt") ms-1"></i>
+                                </a>
+                            </th>
+                            <th>Naslov</th>
+                            <th>Tekst lekcije</th> 
+                            <th>Kreator</th>
+                            <th>Poglavlje</th>
+                            <th>Potpoglavlje</th>
+                            <th>Nivo</th>
+                            <th class="text-end pe-4">Akcije</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="ps-4">
+                                    <span class="badge bg-light text-muted border">#@item.LekcijaId</span>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-dark">
+                                        @item.LekcijaNaslov
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="text-muted small text-truncate-custom" title="@item.LekcijaTekst">
+                                        @(string.IsNullOrEmpty(item.LekcijaTekst) ? "Nema teksta" : item.LekcijaTekst)
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="small text-muted"><i class="bi bi-person me-1"></i> @(item.Kreator?.KorisnikIme ?? "Sistem")</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border fw-normal">@item.Poglavlje?.PoglavljeNaziv</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border fw-normal">@item.Potpoglavlje?.NazivPotpoglavlja</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border fw-normal">@item.Nivo?.NazivNivoa</span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="btn-group shadow-sm">
+                                        <a href="/Lekcije/Details/@item.LekcijaId" class="btn btn-sm btn-outline-secondary"><i class="bi bi-eye"></i></a>
+                                        <a href="/Lekcije/Edit/@item.LekcijaId" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+
+                                         <form action="/Lekcije/Delete/@item.LekcijaId" method="post" class="d-inline" onsubmit="return confirm('Da li ste sigurni da želite da obrišete lekciju &quot;@item.LekcijaNaslov&quot;?');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        @if (totalPages > 1)
+        {
+            <div class="card-footer bg-white py-3 border-top">
+                <nav>
+                    <ul class="pagination justify-content-center mb-0">
+                        <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                            <a class="page-link" href="?page=@(currentPage - 1)&pageSize=@pageSize&sortOrder=@currentSort">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                        @for (int i = 1; i <= totalPages; i++)
+                        {
+                            <li class="page-item @(i == currentPage ? "active" : "")">
+                                <a class="page-link" href="?page=@i&pageSize=@pageSize&sortOrder=@currentSort">@i</a>
+                            </li>
+                        }
+                        <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                            <a class="page-link" href="?page=@(currentPage + 1)&pageSize=@pageSize&sortOrder=@currentSort">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function changePageSize() {
+            const size = document.getElementById("pageSizeSelect").value;
+            window.location.href = `/Lekcije/Index?page=1&pageSize=${size}&sortOrder=@currentSort`;
+        }
+    </script>
+}

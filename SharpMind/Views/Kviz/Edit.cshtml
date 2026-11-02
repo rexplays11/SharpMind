@@ -1,0 +1,226 @@
+﻿@model SharpMind.Models.Kviz
+@{
+    ViewData["Title"] = "Izmena kviza";
+    string boja = "#0d6efd";
+    var selektovanaPitanja = ViewBag.SelektovanaPitanja as List<int> ?? new List<int>();
+
+    var trenutni = ViewBag.TrenutniKorisnik as SharpMind.Models.Korisnik;
+    string ulogaNaziv = "Profesor";
+    if (trenutni != null && trenutni.Uloga != null)
+    {
+        ulogaNaziv = trenutni.Uloga.UlogaNaziv;
+    }
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg border border-2 border-dark" style="border-radius: 15px; overflow: hidden;">
+
+                <div class="card-header text-white py-3 text-center border-bottom border-2 border-dark" style="background-color:@boja;">
+                    <h5 class="mb-0 fw-bold text-uppercase">
+                        <i class="bi bi-pencil-square me-2"></i> Izmena kviza
+                    </h5>
+                </div>
+
+                <div class="card-body p-5 bg-white">
+                    <form asp-controller="Kviz" asp-action="Edit" asp-route-id="@Model.KvizId" method="post" id="kvizForma">
+                        @Html.AntiForgeryToken()
+
+                        <input type="hidden" asp-for="KvizId" />
+                        <input type="hidden" asp-for="DatumKreiranja" />
+
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div class="alert alert-danger border-2 border-danger shadow-sm small fw-bold mb-4" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                <strong>Izmena nije uspela. Proverite sledeće stavke:</strong>
+                                <div asp-validation-summary="All" class="text-danger mt-2 m-0 list-unstyled"></div>
+                            </div>
+                        }
+
+                        <div class="mb-4">
+                            <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Kreator kviza</label>
+                            @if (ulogaNaziv == "Admin")
+                            {
+                                <select name="KorisnikId" class="form-select form-select-lg border-2 border-dark shadow-sm" style="border-radius: 8px;" required>
+                                    @foreach (var k in ViewBag.Korisnici)
+                                    {
+                                        <option value="@k.KorisnikId" selected="@(Model.KorisnikId == k.KorisnikId ? "selected" : null)">
+                                            @k.KorisnikIme (@(k.Uloga?.UlogaNaziv ?? "Korisnik"))
+                                        </option>
+                                    }
+                                </select>
+                                <div class="form-text small text-muted text-start mt-1">Kao administrator, možete prebaciti vlasništvo nad kvizom na drugog profesora.</div>
+                            }
+                            else
+                            {
+                                <input type="hidden" name="KorisnikId" value="@Model.KorisnikId" />
+                                <input type="text" class="form-control form-control-lg border-2 border-dark shadow-sm bg-light fw-bold text-muted" value="@(Model.Kreator?.KorisnikIme ?? trenutni?.KorisnikIme)" readonly />
+                                <div class="form-text small text-muted text-start mt-1">Profesori ne mogu menjati ime kreatora kviza.</div>
+                            }
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Naslov kviza</label>
+                            <input name="KvizNaslov" value="@Model.KvizNaslov" class="form-control form-control-lg border-2 border-dark shadow-sm" style="border-radius: 8px;" required />
+                            <span asp-validation-for="KvizNaslov" class="text-danger small fw-bold mt-1 d-block"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Tip kviza</label>
+                            <select name="TipKviza" id="tipKviza" class="form-select form-select-lg border-2 border-dark shadow-sm" style="border-radius: 8px;">
+                                <option value="vreme" selected="@(Model.TipKviza == "vreme")">⏱ Vreme</option>
+                                <option value="zivoti" selected="@(Model.TipKviza == "zivoti")">❤️ Životi</option>
+                            </select>
+                        </div>
+
+                        <div id="vremeDiv" class="mb-4">
+                            <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Vremensko ograničenje (sekunde)</label>
+                            <input name="VremenskoOgranicenje" type="number" min="30" max="1800" value="@(Model.VremenskoOgranicenje ?? 120)" class="form-control form-control-lg border-2 border-dark shadow-sm" style="border-radius: 8px;" id="vremeInput" />
+                            <span asp-validation-for="VremenskoOgranicenje" class="text-danger small fw-bold mt-1 d-block"></span>
+                            <div class="form-text small text-muted text-start mt-1">Dozvoljeno je od 30 do 1800 sekundi (30 min).</div>
+                        </div>
+
+                        <div id="zivotiDiv" class="mb-4">
+                            <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Broj života</label>
+                            <input name="BrojZivota" type="number" min="1" max="9" value="@(Model.BrojZivota ?? 3)" class="form-control form-control-lg border-2 border-dark shadow-sm" style="border-radius: 8px;" id="zivotiInput" />
+                            <span asp-validation-for="BrojZivota" class="text-danger small fw-bold mt-1 d-block"></span>
+                            <div class="form-text small text-muted text-start mt-1">Dozvoljen broj šansi je od 1 do maksimalno 9 života.</div>
+                        </div>
+
+                        <hr class="border border-secondary my-4" />
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="form-label fw-black text-dark text-uppercase small m-0" style="letter-spacing: 1px;">Izaberi pitanja</h5>
+                            <span id="brojacPitanja" class="badge bg-danger border border-1 border-white shadow-sm py-2 px-3 fw-bold">Izabrano: 0 / Min: 5</span>
+                        </div>
+
+                        <div id="pitanjaUpozorenje" class="alert alert-warning border-2 border-warning py-2 px-3 small fw-bold mb-3">
+                            ⚠️ Nedovoljan broj pitanja za izmenu kviza. Izaberite još <span id="faliBroj">5</span> pitanja.
+                        </div>
+
+                        <div class="lista-pitanja-kontejner px-1 py-2 border border-2 border-dark shadow-sm mb-5" style="max-height: 320px; overflow-y: auto; border-radius: 8px;">
+                            @foreach (var p in ViewBag.Pitanja)
+                            {
+                                <div class="pitanje-red d-flex align-items-center py-2 px-3">
+                                    <div class="form-check m-0 d-flex align-items-center w-100">
+                                        <input class="form-check-input border-2 border-dark flex-shrink-0" type="checkbox" name="izabranaPitanja" value="@p.PitanjeId" id="p_@p.PitanjeId" @(selektovanaPitanja.Contains(p.PitanjeId) ? "checked=\"checked\"" : "") style="width: 1.35rem; height: 1.35rem; cursor: pointer;" />
+                                        <label class="form-check-label ms-3 text-dark d-flex align-items-center w-100" for="p_@p.PitanjeId" style="cursor: pointer;">
+                                            <span class="badge bg-dark me-2 border border-1 border-white shadow-sm font-monospace py-1.5 px-2">ID: #@p.PitanjeId</span>
+                                            <span class="fw-semibold small text-break">@p.PitanjeTekst</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="d-grid gap-3">
+                            <button type="submit" id="submitKvizBtn" class="btn text-white fw-bold py-3 shadow text-uppercase" style="background-color:@boja; border-radius: 8px;">
+                                <i class="bi bi-save me-2"></i> Sačuvaj izmene
+                            </button>
+                            <a asp-action="Index" class="btn btn-dark fw-bold py-3 shadow text-uppercase" style="border-radius: 8px;">
+                                <i class="bi bi-arrow-left me-2"></i> Odustani
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fw-black {
+        font-weight: 900 !important;
+    }
+
+    .form-control:focus, .form-select:focus, .form-check-input:focus {
+        border-color: @boja !important;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15) !important;
+    }
+
+    .pitanje-red {
+        transition: background-color 0.2s ease;
+    }
+
+        .pitanje-red:not(:last-child) {
+            border-bottom: 1px solid #dee2e6 !important;
+        }
+
+        .pitanje-red:hover {
+            background-color: #f8f9fa;
+        }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const tip = document.getElementById("tipKviza");
+        const vremeDiv = document.getElementById("vremeDiv");
+        const zivotiDiv = document.getElementById("zivotiDiv");
+        const vremeInput = document.getElementById("vremeInput");
+        const zivotiInput = document.getElementById("zivotiInput");
+
+        const forma = document.getElementById("kvizForma");
+        const checkbosevi = document.querySelectorAll('input[name="izabranaPitanja"]');
+        const brojacBadge = document.getElementById("brojacPitanja");
+        const upozorenjeDiv = document.getElementById("pitanjaUpozorenje");
+        const faliBrojSpan = document.getElementById("faliBroj");
+        const submitBtn = document.getElementById("submitKvizBtn");
+
+        function osveziPrikaz() {
+            if (tip.value === "vreme") {
+                vremeDiv.style.display = "block";
+                zivotiDiv.style.display = "none";
+                vremeInput.setAttribute("required", "required");
+                vremeInput.setAttribute("min", "30");
+                vremeInput.setAttribute("max", "1800");
+                zivotiInput.removeAttribute("required");
+            } else {
+                vremeDiv.style.display = "none";
+                zivotiDiv.style.display = "block";
+                zivotiInput.setAttribute("required", "required");
+                zivotiInput.setAttribute("min", "1");
+                zivotiInput.setAttribute("max", "9");
+                vremeInput.removeAttribute("required");
+            }
+        }
+
+        function proveriBrojPitanja() {
+            const selektovano = document.querySelectorAll('input[name="izabranaPitanja"]:checked').length;
+            brojacBadge.innerText = `Izabrano: ${selektovano} / Min: 5`;
+
+            if (selektovano >= 5) {
+                brojacBadge.classList.remove("bg-danger");
+                brojacBadge.classList.add("bg-success");
+                upozorenjeDiv.style.display = "none";
+                submitBtn.removeAttribute("disabled");
+            } else {
+                brojacBadge.classList.remove("bg-success");
+                brojacBadge.classList.add("bg-danger");
+                upozorenjeDiv.style.display = "block";
+
+                const fali = 5 - selektovano;
+                let sufiks = fali === 1 ? "pitanje" : (fali >= 2 && fali <= 4) ? "pitanja" : "pitanja";
+                faliBrojSpan.innerText = `${fali} ${sufiks}`;
+                submitBtn.setAttribute("disabled", "disabled");
+            }
+        }
+
+        tip.addEventListener("change", osveziPrikaz);
+        checkbosevi.forEach(cb => {
+            cb.addEventListener("change", proveriBrojPitanja);
+        });
+
+        forma.addEventListener("submit", function(e) {
+            const selektovano = document.querySelectorAll('input[name="izabranaPitanja"]:checked').length;
+            if (selektovano < 5) {
+                e.preventDefault();
+                alert(`Nedovoljan broj pitanja! Morate izabrati još ${5 - selektovano} pitanja.`);
+            }
+        });
+
+        osveziPrikaz();
+        proveriBrojPitanja();
+    });
+</script>

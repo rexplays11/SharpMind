@@ -1,0 +1,222 @@
+﻿@model SharpMind.Models.Lekcija
+@{
+    ViewData["Title"] = "Izmena lekcije";
+    string crimson = "#228B22";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border border-2 border-dark" style="border-radius: 15px; overflow: hidden;">
+
+                <div class="card-header text-white py-3 text-center border-bottom border-2 border-dark" style="background-color:@crimson;">
+                    <h5 class="mb-0 fw-bold text-uppercase">
+                        <i class="bi bi-pencil-square me-2"></i> Izmeni Lekciju
+                    </h5>
+                </div>
+
+                <div class="card-body p-5 bg-white">
+                    <form action="/Lekcije/PregledLekcijeIzmeni" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <input type="hidden" name="LekcijaId" value="@Model?.LekcijaId" />
+
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div class="text-danger mb-4 fw-bold">
+                                @Html.ValidationSummary(true, "")
+                            </div>
+                        }
+
+                        <div class="mb-5 text-center">
+                            <div class="badge bg-dark px-3 py-2 shadow-sm border border-1 border-white">
+                                <span class="text-uppercase small fw-bold">Trenutni ID:</span> #@Model?.LekcijaId
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="LekcijaNaslov" class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Naslov Lekcije</label>
+                            <input id="LekcijaNaslov" name="LekcijaNaslov" class="form-control form-control-lg border-2 border-dark shadow-sm"
+                                   required value="@Model?.LekcijaNaslov" style="border-radius: 8px;" placeholder="Unesite naslov lekcije..." />
+                            @if (ViewData.ModelState["LekcijaNaslov"]?.Errors.Count > 0)
+                            {
+                                <span class="text-danger small fw-bold mt-1 d-block">
+                                    @ViewData.ModelState["LekcijaNaslov"]?.Errors[0].ErrorMessage
+                                </span>
+                            }
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="KorisnikId" class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Autor / Korisnik</label>
+                            <select id="KorisnikId" name="KorisnikId" class="form-select form-select-lg border-2 border-dark shadow-sm" required style="border-radius: 8px;">
+                                <option value="">-- Odaberite Korisnika --</option>
+                                @if (ViewBag.Korisnici != null)
+                                {
+                                    foreach (var k in ViewBag.Korisnici)
+                                    {
+                                        bool isSelected = Model != null && k.KorisnikId == Model.KorisnikId;
+                                        <option value="@k.KorisnikId" selected="@(isSelected ? "selected" : null)">
+                                            @k.KorisnikIme
+                                        </option>
+                                    }
+                                }
+                            </select>
+                            @if (ViewData.ModelState["KorisnikId"]?.Errors.Count > 0)
+                            {
+                                <span class="text-danger small fw-bold mt-1 d-block">
+                                    @ViewData.ModelState["KorisnikId"]?.Errors[0].ErrorMessage
+                                </span>
+                            }
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label for="poglavljeSelect" class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Poglavlje</label>
+                                <select id="poglavljeSelect" name="PoglavljeId" class="form-select form-select-lg border-2 border-dark shadow-sm" style="border-radius: 8px;">
+                                    <option value="">-- Odaberite Poglavlje --</option>
+                                    @if (ViewBag.Poglavlja != null)
+                                    {
+                                        foreach (var p in ViewBag.Poglavlja)
+                                        {
+                                            bool isSelected = Model != null && p.PoglavljeId == Model.PoglavljeId;
+                                            <option value="@p.PoglavljeId" selected="@(isSelected ? "selected" : null)">@p.PoglavljeNaziv</option>
+                                        }
+                                    }
+                                </select>
+                                @if (ViewData.ModelState["PoglavljeId"]?.Errors.Count > 0)
+                                {
+                                    <span class="text-danger small fw-bold mt-1 d-block">
+                                        @ViewData.ModelState["PoglavljeId"]?.Errors[0].ErrorMessage
+                                    </span>
+                                }
+                            </div>
+
+                            <div class="col-md-4">
+                                <label for="potpoglavljeSelect" class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Potpoglavlje</label>
+                                <select id="potpoglavljeSelect" name="PotpoglavljeId" class="form-select form-select-lg border-2 border-dark shadow-sm" style="border-radius: 8px;">
+                                    <option value="">-- Bez potpoglavlja --</option>
+                                    @if (ViewBag.Potpoglavlja != null)
+                                    {
+                                        foreach (var pp in ViewBag.Potpoglavlja)
+                                        {
+                                            bool isSelected = Model != null && pp.PotpoglavljeId == Model.PotpoglavljeId;
+                                            <option value="@pp.PotpoglavljeId" data-poglavlje-id="@pp.PoglavljeId" selected="@(isSelected ? "selected" : null)">@pp.NazivPotpoglavlja</option>
+                                        }
+                                    }
+                                </select>
+                                @if (ViewData.ModelState["PotpoglavljeId"]?.Errors.Count > 0)
+                                {
+                                    <span class="text-danger small fw-bold mt-1 d-block">
+                                        @ViewData.ModelState["PotpoglavljeId"]?.Errors[0].ErrorMessage
+                                    </span>
+                                }
+                            </div>
+
+                            <div class="col-md-4">
+                                <label for="NivoId" class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Nivo</label>
+                                <select id="NivoId" name="NivoId" class="form-select form-select-lg border-2 border-dark shadow-sm" style="border-radius: 8px;">
+                                    <option value="">-- Odaberite Nivo --</option>
+                                    @if (ViewBag.Nivoi != null)
+                                    {
+                                        foreach (var n in ViewBag.Nivoi)
+                                        {
+                                            bool isSelected = Model != null && n.NivoId == Model.NivoId;
+                                            <option value="@n.NivoId" selected="@(isSelected ? "selected" : null)">@n.NazivNivoa</option>
+                                        }
+                                    }
+                                </select>
+                                @if (ViewData.ModelState["NivoId"]?.Errors.Count > 0)
+                                {
+                                    <span class="text-danger small fw-bold mt-1 d-block">
+                                        @ViewData.ModelState["NivoId"]?.Errors[0].ErrorMessage
+                                    </span>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="mb-5">
+                            <label for="LekcijaTekst" class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Sadržaj lekcije</label>
+                            <textarea id="LekcijaTekst" name="LekcijaTekst" class="form-control form-control-lg border-2 border-dark shadow-sm" rows="10" required style="border-radius: 8px;" placeholder="Unesite tekst lekcije...">@Model?.LekcijaTekst</textarea>
+                            @if (ViewData.ModelState["LekcijaTekst"]?.Errors.Count > 0)
+                            {
+                                <span class="text-danger small fw-bold mt-1 d-block">
+                                    @ViewData.ModelState["LekcijaTekst"]?.Errors[0].ErrorMessage
+                                </span>
+                            }
+                        </div>
+
+                        <div class="d-grid gap-3">
+                            <button type="submit" class="btn text-white fw-bold py-3 shadow text-uppercase" style="background-color:@crimson; border-radius: 8px;">
+                                <i class="bi bi-check-lg me-2"></i> Sačuvaj izmene
+                            </button>
+                            <a href="/Lekcije/PregledLekcija" class="btn btn-dark fw-bold py-3 shadow text-uppercase" style="border-radius: 8px;">
+                                <i class="bi bi-arrow-left me-2"></i> Odustani
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fw-black {
+        font-weight: 900 !important;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: @crimson !important;
+        box-shadow: 0 0 0 0.25rem rgba(34, 139, 34, 0.15) !important;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const selectPoglavlje = document.getElementById("poglavljeSelect");
+            const selectPotpoglavlje = document.getElementById("potpoglavljeSelect");
+            if (!selectPoglavlje || !selectPotpoglavlje) return;
+
+            const sveOpcijePotpoglavlja = Array.from(selectPotpoglavlje.querySelectorAll("option"));
+
+            function filtrirajPotpoglavlja() {
+                const izabranoPoglavljeId = selectPoglavlje.value;
+
+                sveOpcijePotpoglavlja.forEach(opt => {
+                    const poglavljeId = opt.getAttribute("data-poglavlje-id");
+
+                    if (!opt.value) {
+                        opt.hidden = false;
+                    } else if (!izabranoPoglavljeId || poglavljeId === izabranoPoglavljeId) {
+                        opt.hidden = false;
+                    } else {
+                        opt.hidden = true;
+                    }
+                });
+
+                const izabranoOpt = selectPotpoglavlje.selectedOptions[0];
+                if (izabranoOpt && izabranoOpt.hidden) {
+                    selectPotpoglavlje.value = "";
+                }
+            }
+
+            selectPoglavlje.addEventListener("change", function () {
+                filtrirajPotpoglavlja();
+            });
+
+            selectPotpoglavlje.addEventListener("change", function () {
+                const izabranaOpcija = selectPotpoglavlje.selectedOptions[0];
+                if (izabranaOpcija && izabranaOpcija.value) {
+                    const pripadajucePoglavljeId = izabranaOpcija.getAttribute("data-poglavlje-id");
+                    if (pripadajucePoglavljeId && selectPoglavlje.value !== pripadajucePoglavljeId) {
+                        selectPoglavlje.value = pripadajucePoglavljeId;
+                        filtrirajPotpoglavlja();
+                    }
+                }
+            });
+
+            filtrirajPotpoglavlja();
+        });
+    </script>
+}

@@ -1,0 +1,299 @@
+﻿@model IEnumerable<SharpMind.Models.Poglavlje>
+
+@{
+    ViewData["Title"] = "Nastavni Plan - SharpMind";
+    string plava = "#4169E1";
+    string tamna = "#212529";
+    string siva = "#f8f9fa";
+
+    int korisnikNivo = ViewBag.KorisnikNivoId ?? 1;
+
+    bool jeMenadzer = User.IsInRole("Admin") || User.IsInRole("Profesor");
+}
+
+<style>
+    .fw-black {
+        font-weight: 900 !important;
+    }
+
+    .accordion-button:not(.collapsed) {
+        background-color: @plava !important;
+        color: white !important;
+        box-shadow: none;
+    }
+
+    .accordion-button::after {
+        filter: brightness(0);
+    }
+
+    .accordion-button:not(.collapsed)::after {
+        filter: brightness(0) invert(1);
+    }
+
+    .potpoglavlje-btn {
+        background-color: #ffffff;
+        color: @tamna;
+        text-align: left;
+        width: 100%;
+        border: none;
+        padding: 12px 20px;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: background-color 0.2s ease;
+    }
+
+        .potpoglavlje-btn:hover {
+            background-color: #f1f3f5;
+        }
+
+        .potpoglavlje-btn .arrow-sub {
+            transition: transform 0.2s ease;
+        }
+
+        .potpoglavlje-btn:not(.collapsed) .arrow-sub {
+            transform: rotate(90deg);
+        }
+
+    .lekcija-card {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 2px solid @tamna !important;
+        border-radius: 10px !important;
+        background-color: white;
+    }
+
+        .lekcija-card:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 5px 0px @tamna !important;
+        }
+
+    .lekcija-zakljucano {
+        cursor: not-allowed !important;
+        opacity: 0.75;
+        background-color: #f8f9fa !important;
+        border: 2px dashed #6c757d !important;
+        pointer-events: none; 
+    }
+
+        .lekcija-zakljucano:hover {
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+    .tekst-prošireno {
+        white-space: pre-line; 
+        word-wrap: break-word;
+        font-size: 1.05rem;
+        line-height: 1.7;
+        color: #1a1a1a;
+    }
+
+    .arrow-rotate {
+        transition: transform 0.3s ease;
+    }
+
+    .lekcija-card[aria-expanded="true"] .arrow-rotate {
+        transform: rotate(180deg);
+    }
+
+    .breadcrumb-custom {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 800;
+        color: @plava;
+    }
+</style>
+
+<div class="container mt-5 mb-5">
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show mb-4 border-2 border-danger shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="d-flex justify-content-between align-items-center mb-5 border-bottom border-4 border-dark pb-3">
+        <div>
+            <h1 class="display-5 fw-black text-uppercase mb-0">
+                <i class="bi bi-journal-code me-2"></i> Nastavni <span style="color: @plava;">Plan</span>
+            </h1>
+            <p class="text-muted fw-bold mb-0">
+                @(jeMenadzer ? "ADMINISTRATORSKI PREGLED KURSA" : "PREGLED GRADIVA")
+            </p>
+        </div>
+    </div>
+
+    <div class="accordion border border-3 border-dark shadow-lg" id="planHarmonika" style="border-radius: 15px; overflow: hidden;">
+        @foreach (var poglavlje in Model)
+        {
+            <div class="accordion-item border-0 border-bottom border-2 border-dark">
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed fw-black text-uppercase py-4 px-4 fs-5" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#poglavlje-@poglavlje.PoglavljeId">
+                        <span class="me-3">📁</span> @poglavlje.PoglavljeNaziv
+                    </button>
+                </h2>
+
+                <div id="poglavlje-@poglavlje.PoglavljeId" class="accordion-collapse collapse" data-bs-parent="#planHarmonika">
+                    <div class="accordion-body p-0" style="background-color: @siva;">
+
+                        <div class="accordion accordion-flush" id="subHarmonika-@poglavlje.PoglavljeId">
+
+                            @foreach (var sub in poglavlje.Potpoglavlja)
+                            {
+                                <div class="border-bottom border-1 border-dark bg-white">
+                                    <div class="d-flex justify-content-between align-items-center pe-4">
+                                        <button class="potpoglavlje-btn collapsed flex-grow-1" type="button"
+                                                data-bs-toggle="collapse" data-bs-target="#subCollapse-@sub.PotpoglavljeId">
+                                            <span>
+                                                <i class="bi bi-chevron-right me-2 text-primary arrow-sub"></i>
+                                                <i class="bi bi-folder2-open me-1 text-secondary"></i> @sub.NazivPotpoglavlja
+                                            </span>
+                                        </button>
+
+                                        @if (jeMenadzer)
+                                        {
+                                            <a href="/Lekcije/PregledLekcijeDodaj?potpoglavljeId=@sub.PotpoglavljeId&poglavljeId=@poglavlje.PoglavljeId"
+                                               class="btn btn-sm btn-outline-dark fw-bold z-3">
+                                                + Dodaj Lekciju
+                                            </a>
+                                        }
+                                    </div>
+                                </div>
+
+                                <div id="subCollapse-@sub.PotpoglavljeId" class="accordion-collapse collapse" data-bs-parent="#subHarmonika-@poglavlje.PoglavljeId">
+                                    <div class="p-4 vstack gap-3">
+                                        @if (sub.Lekcije == null || !sub.Lekcije.Any())
+                                        {
+                                            <div class="text-center py-3 text-muted border border-dashed rounded-3 bg-white">
+                                                <small><i class="bi bi-info-circle me-1"></i> Nema dodatih lekcija u ovom potpoglavlju.</small>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            @foreach (var lekcija in sub.Lekcije)
+                                            {
+                                                bool zakljucano = !jeMenadzer && (lekcija.NivoId > korisnikNivo);
+                                                string cistTekst = lekcija.LekcijaTekst?.TrimStart('\r', '\n', ' ')?.Trim() ?? "";
+
+                                                <div class="card lekcija-card border-0 @(zakljucano ? "lekcija-zakljucano" : "")"
+                                                     @(zakljucano ? "" : $"data-bs-toggle=collapse data-bs-target=#tekst-lekcije-{lekcija.LekcijaId} aria-expanded=false")>
+
+                                                    <div class="card-body p-3">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <div class="d-flex align-items-center">
+                                                                <div class="me-3 d-none d-md-block">
+                                                                    @if (zakljucano)
+                                                                    {
+                                                                        <i class="bi bi-lock-fill fs-2 text-muted"></i>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <i class="bi bi-file-earmark-text fs-2" style="color: @plava;"></i>
+                                                                    }
+                                                                </div>
+                                                                <div>
+                                                                    <div class="breadcrumb-custom">
+                                                                        @poglavlje.PoglavljeNaziv / @sub.NazivPotpoglavlja
+                                                                        @if (zakljucano)
+                                                                        {
+                                                                            <span class="text-danger ms-1"><i class="bi bi-lock"></i> ZAKLJUČANO</span>
+                                                                        }
+                                                                    </div>
+                                                                    <h5 class="fw-black mb-0 text-muted-if-locked">
+                                                                        @lekcija.LekcijaNaslov
+                                                                    </h5>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="hstack gap-3">
+                                                                @if (jeMenadzer)
+                                                                {
+                                                                    <div class="btn-group bg-white border border-2 border-dark shadow-sm" onclick="event.stopPropagation();">
+                                                                        <a href="/Lekcije/PregledLekcijeIzmeni/@lekcija.LekcijaId" class="btn btn-sm btn-white">
+                                                                            <i class="bi bi-pencil-square text-dark"></i>
+                                                                        </a>
+                                                                        <form action="@Url.Action("PregledLekcijeObrisi", "Lekcije", new { id = lekcija.LekcijaId })" method="post" class="d-inline">
+                                                                            @Html.AntiForgeryToken()
+                                                                            <button type="submit" class="btn btn-sm btn-white border-0"
+                                                                                    title="Obriši"
+                                                                                    onclick="return confirm('Sigurno želiš da obrišeš ovu lekciju iz plana?')">
+                                                                                <i class="bi bi-trash-fill text-danger"></i>
+                                                                            </button>
+                                                                        </form>
+                                                                    </div>
+                                                                }
+
+                                                                @if (!zakljucano)
+                                                                {
+                                                                    <i class="bi bi-chevron-down arrow-rotate fs-5"></i>
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span class="badge bg-secondary small" style="pointer-events: auto;" title="Ova lekcija zahteva veći nivo znanja.">
+                                                                        <i class="bi bi-lock-fill"></i> Nivo @(lekcija.Nivo?.NazivNivoa ?? "Srednji")
+                                                                    </span>
+                                                                }
+                                                            </div>
+                                                        </div>
+
+                                                        @if (!zakljucano)
+                                                        {
+                                                            <div class="mt-2 text-muted small snippet-area" id="snippet-@lekcija.LekcijaId">@if (!string.IsNullOrEmpty(cistTekst)){
+                                                            @(cistTekst.Length > 110 ? cistTekst.Substring(0, 110) + "..." : cistTekst)
+                                                        }
+                </div>
+
+                                                        <div class="collapse" id="tekst-lekcije-@lekcija.LekcijaId">
+                                                            <hr class="border-2 border-dark my-3">
+                                                            <div class="tekst-prošireno bg-light p-3 border-start border-4 border-primary shadow-sm">@cistTekst</div>
+
+                                                            <div class="mt-4 d-flex justify-content-between align-items-center" onclick="event.stopPropagation();">
+                                                                <span class="badge bg-dark px-3 py-2">
+                                                                    NIVO: @(lekcija.Nivo?.NazivNivoa ?? "Srednji")
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div> 
+
+                </div>
+            </div>
+        </div>
+                }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.collapse').forEach(el => {
+            if (el.id.startsWith('tekst-lekcije-')) {
+                el.addEventListener('show.bs.collapse', function (e) {
+                    e.stopPropagation();
+                    const id = this.id.replace('tekst-lekcije-', '');
+                    const snip = document.getElementById('snippet-' + id);
+                    if(snip) snip.style.display = 'none';
+                });
+                el.addEventListener('hide.bs.collapse', function (e) {
+                    e.stopPropagation();
+                    const id = this.id.replace('tekst-lekcije-', '');
+                    const snip = document.getElementById('snippet-' + id);
+                    if(snip) snip.style.display = 'block';
+                });
+            }
+        });
+    </script>
+}

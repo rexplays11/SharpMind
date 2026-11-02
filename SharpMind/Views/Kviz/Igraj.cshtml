@@ -1,0 +1,207 @@
+﻿@model SharpMind.Models.Kviz
+@{
+    string boja = "#007bff";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-2 border-dark" style="border-radius: 20px; min-height: 600px;">
+
+                <div class="card-header text-white py-3 d-flex justify-content-between align-items-center" style="background-color:@boja; border-top-left-radius: 18px; border-top-right-radius: 18px;">
+                    <div id="stat-info" class="fw-bold fs-5">
+                        @if (Model.TipKviza == "zivoti")
+                        {
+                            <span><i class="bi bi-heart-fill text-danger"></i> Životi: <span id="brojac-zivota">@Model.BrojZivota</span></span>
+                        }
+                        else
+                        {
+                            <span><i class="bi bi-clock-fill"></i> Vreme: <span id="brojac-vremena">@Model.VremenskoOgranicenje</span>s</span>
+                        }
+                    </div>
+                    <div class="fw-bold text-uppercase fs-5">Poeni: <span id="trenutni-score">0</span></div>
+                </div>
+
+                <div class="card-body p-5 d-flex flex-column text-center">
+                    <div id="igra-ekran" class="w-100">
+                        <h3 id="pitanje-tekst" class="fw-bold mb-5" style="min-height:80px;">Učitavanje...</h3>
+                        <div id="odgovori-lista" class="d-grid gap-3"></div>
+                    </div>
+
+
+                    <div id="kraj-ekran" class="d-none my-auto">
+                        <i class="bi bi-trophy display-1 text-warning"></i>
+                        <h2 class="fw-black mt-4">KRAJ KVIZA!</h2>
+                        <p class="fs-4">Vaš rezultat: <strong id="finalni-score">0</strong> pogođenih pitanja.</p>
+                        <a href="/Kviz/Index" class="btn btn-dark btn-lg mt-4 px-5 border-2 border-dark shadow">Nazad na listu</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        const kvizId = @Model.KvizId;
+        const tipKviza = "@Model.TipKviza";
+        let preostaloZivota = @(Model.BrojZivota ?? 0);
+        let preostaloVremena = @(Model.VremenskoOgranicenje ?? 0);
+        let score = 0;
+        let pId = 0;
+        let odgovorilaIds = [];
+        let tajmerInterval;
+        let trenutniOdgovori = [];
+        let isMultiselectPitanje = false;
+
+        function ucitajPitanje() {
+            $.get(`/Kviz/DajPitanjeIzKviza?kvizId=${kvizId}&odgovorilaIds=${odgovorilaIds.join(',')}`, (data) => {
+                if (data.kraj) { zavrsiKviz(); return; }
+
+                pId = data.pitanjeId;
+                odgovorilaIds.push(pId);
+                trenutniOdgovori = data.odgovori;
+                isMultiselectPitanje = data.isMultiselect;
+
+                $("#pitanje-tekst").text(data.tekst);
+                $("#odgovori-lista").empty();
+
+                if (data.blokKod && data.blokKod.trim() !== "") {
+                    iscrtajKompajler(data.blokKod);
+                } else {
+                    if (isMultiselectPitanje) {
+                        $("#pitanje-tekst").append("<br><small class='text-muted fs-6'>(Izaberite sve tačne odgovore)</small>");
+
+                        data.odgovori.forEach(o => {
+                            let checkboxHtml = `
+                                <div class='text-start border border-2 border-dark p-3 rounded shadow-sm d-flex align-items-center bg-light'>
+                                    <input type='checkbox' class='form-check-input me-3 multiselect-chk' style='transform: scale(1.5);' value='${o.odgovorId}' id='chk_${o.odgovorId}'>
+                                    <label class='form-check-label fw-bold fs-5 w-100 m-0' style='cursor:pointer;' for='chk_${o.odgovorId}'>${o.odgovorTekst}</label>
+                                </div>`;
+                            $("#odgovori-lista").append(checkboxHtml);
+                        });
+
+                        $("#odgovori-lista").append(`
+                            <button class='btn btn-dark btn-lg mt-3 py-3 fw-bold shadow border-2 border-dark' id='potvrdi-multiselect-btn' onclick='potvrdiMultiselect()'>
+                                Potvrdi odgovore <i class="bi bi-check-circle-fill ms-2"></i>
+                            </button>`);
+                    } else {
+                        data.odgovori.forEach(o => {
+                            $("#odgovori-lista").append(`<button class="btn btn-outline-dark py-3 fw-bold odg-btn fs-5 shadow-sm border-2" onclick="proveri([${o.odgovorId}])">${o.odgovorTekst}</button>`);
+                        });
+                    }
+                }
+            });
+        }
+
+        function potvrdiMultiselect() {
+            let selektovaniIds = [];
+            $(".multiselect-chk:checked").each(function() {
+                selektovaniIds.push(parseInt($(this).val()));
+            });
+
+            if (selektovaniIds.length === 0) {
+                alert("Morate izabrati barem jedan odgovor pre potvrde!");
+                return;
+            }
+
+            $(".multiselect-chk").prop("disabled", true);
+            $("#potvrdi-multiselect-btn").prop("disabled", true);
+
+            proveri(selektovaniIds);
+        }
+
+        function proveri(odgovorIds) {
+            $(".odg-btn").prop("disabled", true);
+
+            $.post('/Kviz/ProveriOdgovor', { pitanjeId: pId, odgovorIds: odgovorIds }, (res) => {
+                if (res.tacan) {
+                    score++;
+                    $("#trenutni-score").text(score);
+                } else {
+                    if (tipKviza === "zivoti") {
+                        preostaloZivota--;
+                        $("#brojac-zivota").text(preostaloZivota);
+                        if (preostaloZivota <= 0) { zavrsiKviz(); return; }
+                    }
+                }
+                ucitajPitanje();
+            });
+        }
+
+        function pokreniKod() {
+            const korisnikovKod = $("#kod-editor").val();
+            const fullCode = `using System;\npublic class Program\n{\n    public static void Main()\n    {\n        ${korisnikovKod}\n    }\n}`;
+
+            $("#kod-konzola").text("Kompajliranje...").addClass("text-warning");
+
+            fetch("/Kviz/RunCode", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ code: fullCode })
+            })
+            .then(res => res.text())
+            .then(output => {
+                const cistOutput = output.trim();
+                $("#kod-konzola").text(cistOutput).removeClass("text-warning").addClass("text-success");
+                let izabranOdgovorId = -1;
+                const poklapanje = trenutniOdgovori.find(o => o.odgovorTekst.trim() === cistOutput);
+                if (poklapanje) izabranOdgovorId = poklapanje.odgovorId;
+
+                setTimeout(() => { proveri(izabranOdgovorId !== -1 ? [izabranOdgovorId] : []); }, 1500);
+            });
+        }
+
+        function zavrsiKviz() {
+            clearInterval(tajmerInterval);
+            $("#igra-ekran, #stat-info").addClass("d-none");
+            $("#kraj-ekran").removeClass("d-none");
+            $("#finalni-score").text(score);
+
+            const korisnikId = @(ViewBag.TrenutniKorisnikId ?? "0");
+
+            if (korisnikId === 0) {
+                console.error("Greska: Korisnik nije identifikovan. Rezultat nije sačuvan.");
+                return;
+            }
+
+            const rezultatPodaci = {
+                KorisnikId: parseInt(korisnikId),
+                TipAktivnosti: "KVIZ",
+                OsvojeniPoeni: parseInt(score),
+                UkupnoPoena: 0,
+                NivoId: null
+            };
+
+            fetch(`/Kviz/SacuvajRezultat?kvizId=${kvizId}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(rezultatPodaci)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    console.log("Rezultat kviza je uspešno zabeležen u bazi podataka!");
+                } else {
+                    alert("Greška sa servera: " + data.message);
+                }
+            })
+            .catch(err => {
+                console.error("Sistemska greška pri slanju rezultata:", err);
+            });
+        }
+
+        function startTajmer() {
+            tajmerInterval = setInterval(() => {
+                preostaloVremena--;
+                $("#brojac-vremena").text(preostaloVremena);
+                if (preostaloVremena <= 0) zavrsiKviz();
+            }, 1000);
+        }
+
+        $(document).ready(() => {
+            if (tipKviza === "vreme") startTajmer();
+            ucitajPitanje();
+        });
+    </script>
+}

@@ -1,0 +1,75 @@
+﻿@model SharpMind.Models.Odgovor
+@{
+    string crimson = "#DC143C";
+    ViewData["Title"] = $"Izmena odgovora #{Model.OdgovorId}";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg border border-2 border-dark" style="border-radius: 15px; overflow: hidden;">
+                <div class="card-header py-3 border-bottom border-2 border-dark" style="background-color:@crimson;">
+                    <h5 class="mb-0 fw-bold text-white text-center text-uppercase">
+                        <i class="bi bi-pencil-square me-2"></i> Izmena Odgovora #@Model.OdgovorId
+                    </h5>
+                </div>
+
+                <div class="card-body p-5 bg-white">
+                    <form asp-controller="Odgovori" asp-action="IzmenaOdgovora" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="OdgovorId" value="@Model.OdgovorId" />
+
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div class="alert alert-danger border-2 border-danger shadow-sm mb-4" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                <strong>Došlo je do greške:</strong>
+                                <div asp-validation-summary="All" class="small mt-1 text-danger list-unstyled"></div>
+                            </div>
+                        }
+
+                        <div class="form-group mb-4">
+                            <label class="form-label fw-bold text-dark text-uppercase small">Za pitanje:</label>
+                            <input class="form-control border-2 border-dark form-control-lg" value="@ViewBag.TekstPitanja" readonly style="background-color: #e9ecef; border-radius: 8px;" />
+                            <input type="hidden" name="PitanjeId" value="@Model.PitanjeId" />
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-black text-dark text-uppercase small">Tekst Odgovora</label>
+                            <textarea name="OdgovorTekst" class="form-control border-2 border-dark shadow-sm" rows="3" required style="border-radius: 8px;">@Model.OdgovorTekst</textarea>
+                            <span asp-validation-for="OdgovorTekst" class="text-danger small fw-bold mt-1 d-block"></span>
+                        </div>
+
+                        <div class="mb-5">
+                            <div class="form-check form-switch p-3 rounded border border-2 border-dark shadow-sm bg-light">
+                                <input class="form-check-input ms-0 me-3" type="checkbox" name="OdgovorTacnost" value="true" id="tacnostSwitch" style="cursor: pointer; transform: scale(1.3);" @(Model.OdgovorTacnost == true ? "checked" : "")>
+                                <label class="form-check-label fw-bold text-dark" for="tacnostSwitch" style="cursor: pointer;">Označi kao TAČAN odgovor</label>
+                                <input type="hidden" name="OdgovorTacnost" value="false" />
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-3">
+                            <button type="submit" class="btn text-white fw-bold py-3 shadow text-uppercase" style="background-color: @crimson; border-radius: 8px;">
+                                <i class="bi bi-save me-2"></i> Sačuvaj izmene
+                            </button>
+                            <a href="/Pitanja/Objedinjeno" class="btn btn-dark fw-bold py-3 shadow text-uppercase" style="border-radius: 8px;">
+                                <i class="bi bi-x-circle me-2"></i> Odustani
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fw-black {
+        font-weight: 900 !important;
+    }
+
+    .form-control:focus {
+        border-color: @crimson !important;
+        box-shadow: 0 0 0 0.25rem rgba(220, 20, 60, 0.15) !important;
+    }
+</style>

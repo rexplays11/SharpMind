@@ -1,0 +1,383 @@
+﻿@using SharpMind.Models
+
+@model IEnumerable<SharpMind.Models.Pitanje>
+@{
+    ViewData["Title"] = "Pregled Pitanja";
+    string crimson = "#DC143C";
+    bool isAdmin = ViewBag.IsAdmin ?? false;
+    int? trenutniKorisnikId = ViewBag.TrenutniKorisnikId;
+}
+
+<style>
+    .fw-black {
+        font-weight: 900 !important;
+    }
+
+    .btn:hover {
+        background-color: inherit !important;
+        color: inherit !important;
+        border-color: inherit !important;
+        opacity: 1 !important;
+        text-decoration: none !important;
+    }
+
+    .btn-crimson-fix {
+        background-color: @crimson !important;
+        color: white !important;
+        border: 2px solid #000 !important;
+    }
+
+        .btn-crimson-fix:hover {
+            background-color: @crimson !important;
+            color: white !important;
+        }
+
+    .btn-dark:hover {
+        background-color: #212529 !important;
+        color: white !important;
+        border-color: #212529 !important;
+    }
+
+    .btn-outline-dark:hover {
+        background-color: transparent !important;
+        color: #212529 !important;
+    }
+
+    .odgovor-stavka {
+        color: #000000 !important;
+        transition: none !important;
+    }
+
+        .odgovor-stavka:hover {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+        }
+
+    .odgovor-stavka-tacna:hover {
+        background-color: #d1e7dd !important;
+        color: #000000 !important;
+    }
+
+    .page-item.disabled .page-link {
+        opacity: 0.5;
+        background-color: #f8f9fa !important;
+        color: #6c757d !important;
+        cursor: not-allowed;
+    }
+</style>
+
+<div class="container mt-5">
+
+    @if (TempData["Greska"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show border border-2 border-dark mb-4 shadow-sm" style="border-radius: 8px;" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["Greska"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (ViewBag.NevalidnaPitanjaList != null)
+    {
+        var nevalidnaPitanja = (List<SharpMind.Models.Pitanje>)ViewBag.NevalidnaPitanjaList;
+
+        <div class="alert alert-danger border border-2 border-dark mb-4 shadow" style="border-radius: 12px; background-color: #fdf2f2;">
+            <h5 class="fw-black text-uppercase mb-2 text-danger">
+                <i class="bi bi-exclamation-octagon-fill me-2"></i>
+                Sistemsko upozorenje: Neispravna pitanja u bazi (@nevalidnaPitanja.Count)
+            </h5>
+            <p class="mb-3 small fw-bold text-dark">
+                Sledeća pitanja ne ispunjavaju osnovne uslove igre. Da bi pitanje bilo aktivno, **mora imati minimum 2 odgovora i barem jedan označen kao tačan**. Ova pitanja su privremeno isključena iz kvizova:
+            </p>
+
+            <div style="max-height: 220px; overflow-y: auto;" class="border border-1 border-dark rounded">
+                <ul class="list-group list-group-flush">
+                    @foreach (var p in nevalidnaPitanja)
+                    {
+                        string autor = p.Kreator != null ? p.Kreator.KorisnikIme : "Sistem/Nepoznato";
+                        bool imaTacan = p.Odgovori != null && p.Odgovori.Any(o => o.OdgovorTacnost == true);
+                        int brojOdgovora = p.Odgovori?.Count ?? 0;
+
+                        <li class="list-group-item bg-white d-flex justify-content-between align-items-center py-2 border-bottom border-dark-subtle">
+                            <span class="text-dark small text-truncate pe-3">
+                                <i class="bi bi-x-circle-fill text-danger me-2"></i>
+                                <strong>ID #@p.PitanjeId:</strong> "@p.PitanjeTekst"
+                            </span>
+
+                            <div class="d-flex gap-2 align-items-center" style="flex-shrink: 0;">
+                                @if (!imaTacan)
+                                {
+                                    <span class="badge bg-danger rounded-pill py-1 px-2 text-uppercase font-monospace text-white" style="font-size: 0.65rem;">
+                                        <i class="bi bi-bookmark-x-fill"></i> Fali tačan
+                                    </span>
+                                }
+                                @if (brojOdgovora < 2)
+                                {
+                                    <span class="badge bg-warning text-dark rounded-pill py-1 px-2 text-uppercase font-monospace" style="font-size: 0.65rem;">
+                                        <i class="bi bi-1-circle-fill"></i> Odgovori: @brojOdgovora/2min
+                                    </span>
+                                }
+                                <span class="badge bg-dark rounded-pill py-1 px-2 text-uppercase font-monospace text-white" style="font-size: 0.7rem;">
+                                    Kreator: @autor
+                                </span>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    }
+
+    <div class="card shadow border border-2 border-dark mb-5" style="border-radius: 12px;">
+        <div class="card-header bg-dark text-white py-3">
+            <h5 class="mb-0 fw-bold text-uppercase"><i class="bi bi-funnel-fill me-2"></i> Filtriranje i Pretraga Pitanja</h5>
+        </div>
+        <div class="card-body bg-light p-4">
+            <form method="get" action="/Pitanja/Objedinjeno">
+                <input type="hidden" name="sortOrder" value="@ViewBag.CurrentSort" />
+
+                <div class="row g-3">
+                    <div class="col-md-5">
+                        <label class="form-label fw-black text-uppercase small text-dark">Naslov / Tekst pitanja</label>
+                        <div class="input-group">
+                            <span class="input-group-text border-2 border-dark bg-white"><i class="bi bi-search"></i></span>
+                            <input type="text" name="pretragaNaslova" value="@ViewBag.TrenutnaPretraga" class="form-control border-2 border-dark" placeholder="Unesite reč iz pitanja..." />
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-black text-uppercase small text-dark">Filtriraj po nivou</label>
+                        <select name="nivoId" class="form-select border-2 border-dark">
+                            <option value="">-- Svi aktivni nivoi --</option>
+                            @foreach (var nivo in (IEnumerable<Nivo>)ViewBag.Nivoi)
+                            {
+                                <option value="@nivo.NivoId" selected="@(ViewBag.TrenutniNivo == nivo.NivoId)">@nivo.NazivNivoa</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-black text-uppercase small text-dark">Ime kreatora</label>
+                        <select name="kreatorId" class="form-select border-2 border-dark">
+                            <option value="">-- Svi aktivni kreatori --</option>
+                            @foreach (var korisnik in (IEnumerable<SharpMind.Models.Korisnik>)ViewBag.Korisnici)
+                            {
+                                <option value="@korisnik.KorisnikId" selected="@(ViewBag.TrenutniKreator == korisnik.KorisnikId)">@korisnik.KorisnikIme</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-12 d-flex gap-2 justify-content-between align-items-center">
+                        <a href="/Pitanja/NovoPitanje" class="btn btn-dark fw-bold px-4 border-2 border-dark" style="border-radius: 8px; background-color: #c5c8c1 !important; color: #000 !important;">
+                            <i class="bi bi-plus-square-fill me-2"></i> KREIRAJ NOVO PITANJE
+                        </a>
+
+                        <div class="d-flex gap-2">
+                            <a href="/Pitanja/Objedinjeno" class="btn btn-outline-dark fw-bold px-4 border-2 border-dark" style="border-radius: 8px;">
+                                RESETUJ FILTERE
+                            </a>
+                            <button type="submit" class="btn btn-dark fw-bold px-5 border-2 border-dark" style="border-radius: 8px;">
+                                PRIMENI FILTERE
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-black text-dark text-uppercase mb-0"><i class="bi bi-list-task me-2"></i> Pitanja u sistemu</h3>
+
+        <a href="@Url.Action("Objedinjeno", new { sortOrder = ViewBag.IdSortParm, pretragaNaslova = ViewBag.TrenutnaPretraga, nivoId = ViewBag.TrenutniNivo, kreatorId = ViewBag.TrenutniKreator })"
+           class="btn btn-dark fw-bold border-2 border-dark px-3 py-2" style="border-radius: 8px;">
+            <i class="bi bi-arrow-down-up me-2"></i>
+            SORTIRAJ PO ID-U @(ViewBag.CurrentSort == "id_asc" ? "(SILAZNO)" : "(UZLAZNO)")
+        </a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-warning border border-2 border-warning p-4 fw-bold shadow-sm" style="border-radius: 12px;">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> Nije pronađeno nijedno pitanje koje odgovara zadatim kriterijumima pretrage.
+        </div>
+    }
+    else
+    {
+        @foreach (var pitanje in Model)
+        {
+            bool imaPravoUpravljanja = isAdmin || (trenutniKorisnikId != null && pitanje.KorisnikId == trenutniKorisnikId);
+
+            <div class="card shadow border border-2 border-dark mb-4" style="border-radius: 12px; overflow: hidden;">
+
+                <div class="card-header bg-white p-4 border-bottom border-2 border-dark d-flex justify-content-between align-items-start">
+                    <div>
+                        <span class="badge bg-dark px-3 py-2 rounded-pill mb-2 fw-bold text-uppercase">
+                            ID #@pitanje.PitanjeId | Nivo: @(pitanje.Nivo?.NazivNivoa ?? "Nije definisan")
+                        </span>
+                        <h4 class="fw-bold text-dark mb-1">@pitanje.PitanjeTekst</h4>
+                        <small class="text-muted">Kreirao: <strong>@(pitanje.Kreator?.KorisnikIme ?? "Sistem / Obrisan")</strong></small>
+                    </div>
+
+                    @if (imaPravoUpravljanja)
+                    {
+                        <form action="/Pitanja/ObrisiPitanjeSaOdgovorima/@pitanje.PitanjeId" method="post" onsubmit="return confirm('Da li ste potpuno sigurni da želite da obrišete ovo pitanje i SVE njegove povezane odgovore? Ova akcija je nepovratna!');">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-crimson-fix fw-bold py-2 px-3 shadow-sm text-uppercase" style="border-radius: 8px;">
+                                <i class="bi bi-trash3-fill me-2"></i> Obriši Pitanje
+                            </button>
+                        </form>
+                    }
+                </div>
+
+                @if (!string.IsNullOrEmpty(pitanje.BlokKod))
+                {
+                    <div class="bg-light border-bottom border-2 border-dark px-4 py-2">
+                        <pre class="mb-0 text-dark font-monospace small p-2 bg-white border border-secondary rounded shadow-sm" style="max-height: 150px; overflow-y: auto;"><code>@pitanje.BlokKod</code></pre>
+                    </div>
+                }
+
+                <div class="card-body bg-light p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-black text-uppercase text-secondary small mb-0">
+                            <i class="bi bi-check-all me-1"></i> Ponuđeni odgovori (@(pitanje.Odgovori?.Count ?? 0)/4):
+                        </h6>
+                    </div>
+
+                    <ul class="list-group border-2 border-dark shadow-sm mb-3" style="border-radius: 8px; overflow: hidden;">
+                        @if (pitanje.Odgovori != null && pitanje.Odgovori.Any())
+                        {
+                            foreach (var odgovor in pitanje.Odgovori)
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center p-3 border-dark @(odgovor.OdgovorTacnost == true ? "list-group-item-success fw-bold odgovor-stavka-tacna" : "bg-white odgovor-stavka")">
+                                    <div class="text-dark text-break pe-3">
+                                        @if (odgovor.OdgovorTacnost == true)
+                                        {
+                                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-circle text-muted me-2"></i>
+                                        }
+                                        @odgovor.OdgovorTekst
+                                    </div>
+
+                                    @if (imaPravoUpravljanja)
+                                    {
+                                        <div class="d-flex gap-1 flex-shrink-0">
+                                            <a href="/Odgovori/IzmenaOdgovora/@odgovor.OdgovorId" class="btn btn-sm btn-outline-dark border-0 p-1" title="Izmeni odgovor">
+                                                <i class="bi bi-pencil-square fs-5 text-primary"></i>
+                                            </a>
+                                            <form action="/Odgovori/ObrisiOdgovor/@odgovor.OdgovorId" method="post" onsubmit="return confirm('Da li ste sigurni da želite da obrišete ovaj odgovor?');" style="display:inline;">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-outline-dark border-0 p-1" title="Obriši odgovor">
+                                                    <i class="bi bi-trash-fill fs-5 text-danger"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    }
+                                </li>
+                            }
+                        }
+                        else
+                        {
+                            <li class="list-group-item text-muted p-3 italic bg-white border-dark odgovor-stavka">
+                                Trenutno nema dodatih odgovora za ovo pitanje.
+                            </li>
+                        }
+                    </ul>
+
+                    @if (imaPravoUpravljanja)
+                    {
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div>
+                                @if (pitanje.Odgovori?.Count < 4)
+                                {
+                                    <a href="/Odgovori/NoviOdgovor?pitanjeId=@pitanje.PitanjeId" class="btn btn-dark fw-bold btn-sm py-2 px-3 border-2 border-dark" style="border-radius: 6px;">
+                                        <i class="bi bi-plus-lg me-1"></i> DODAJ ODGOVOR
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary p-2 border border-dark text-uppercase font-monospace" title="Maksimalan broj odgovora dostignut">
+                                        <i class="bi bi-lock-fill"></i> Odgovori popunjeni
+                                    </span>
+                                }
+                            </div>
+
+                            <a href="/Pitanja/IzmenaPitanja/@pitanje.PitanjeId" class="btn btn-sm btn-outline-dark fw-bold py-2 px-3 border-2 border-dark" style="border-radius: 6px; background-color: #c5c8c1 !important; color: #000 !important;">
+                                <i class="bi bi-pencil-fill me-1"></i> IZMENI PITANJE
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+
+        @if (ViewBag.TotalPages > 1)
+        {
+            int currentPage = ViewBag.CurrentPage ?? 1;
+            int totalPages = ViewBag.TotalPages ?? 1;
+            string trenutnoSortiranje = ViewBag.CurrentSort;
+            string pretragaText = ViewBag.TrenutnaPretraga;
+            int? nivoFilter = ViewBag.TrenutniNivo;
+            int? kreatorFilter = ViewBag.TrenutniKreator;
+
+            <nav aria-label="Navigacija kroz pitanja" class="mt-5 mb-5">
+                <ul class="pagination justify-content-center d-flex flex-wrap gap-2">
+
+                    <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                        <a class="page-link border-2 border-dark fw-bold text-dark rounded bg-white py-2 px-3"
+                           href="@Url.Action("Objedinjeno", new { page = 1, sortOrder = trenutnoSortiranje, pretragaNaslova = pretragaText, nivoId = nivoFilter, kreatorId = kreatorFilter })">
+                            <i class="bi bi-chevron-double-left"></i>
+                        </a>
+                    </li>
+
+                    <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                        <a class="page-link border-2 border-dark fw-bold text-dark rounded bg-white py-2 px-3"
+                           href="@Url.Action("Objedinjeno", new { page = currentPage - 1, sortOrder = trenutnoSortiranje, pretragaNaslova = pretragaText, nivoId = nivoFilter, kreatorId = kreatorFilter })">
+                            Prethodna
+                        </a>
+                    </li>
+
+                    @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                    {
+                        <li class="page-item @(i == currentPage ? "active" : "")">
+                            @if (i == currentPage)
+                            {
+                                <span class="page-link border-2 border-dark fw-black bg-dark text-white rounded py-2 px-3">@i</span>
+                            }
+                            else
+                            {
+                                <a class="page-link border-2 border-dark fw-bold text-dark bg-white rounded py-2 px-3"
+                                   href="@Url.Action("Objedinjeno", new { page = i, sortOrder = trenutnoSortiranje, pretragaNaslova = pretragaText, nivoId = nivoFilter, kreatorId = kreatorFilter })">
+                                    @i
+                                </a>
+                            }
+                        </li>
+                    }
+
+                    <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                        <a class="page-link border-2 border-dark fw-bold text-dark rounded bg-white py-2 px-3"
+                           href="@Url.Action("Objedinjeno", new { page = currentPage + 1, sortOrder = trenutnoSortiranje, pretragaNaslova = pretragaText, nivoId = nivoFilter, kreatorId = kreatorFilter })">
+                            Sledeća
+                        </a>
+                    </li>
+
+                    <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                        <a class="page-link border-2 border-dark fw-bold text-dark rounded bg-white py-2 px-3"
+                           href="@Url.Action("Objedinjeno", new { page = totalPages, sortOrder = trenutnoSortiranje, pretragaNaslova = pretragaText, nivoId = nivoFilter, kreatorId = kreatorFilter })">
+                            <i class="bi bi-chevron-double-right"></i>
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="text-center text-muted small fw-bold mt-2 text-uppercase">
+                    Stranica @currentPage od @totalPages (Ukupno zapisa: @ViewBag.TotalItems)
+                </div>
+            </nav>
+        }
+    }
+</div>

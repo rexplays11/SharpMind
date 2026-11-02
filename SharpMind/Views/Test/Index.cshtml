@@ -1,0 +1,219 @@
+﻿@model List<SharpMind.Models.TestPitanjeVM>
+
+@{
+    ViewData["Title"] = "Test Znanja";
+}
+
+<div class="container mt-4" style="max-width: 850px;">
+    <div class="card shadow border-0" style="border-radius: 12px; overflow: hidden;">
+        <div class="card-header text-white p-4" style="background-color: #2c3e50; border-bottom: 5px solid #8fb997;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0 fw-bold">🧠 Test Znanja</h2>
+                    <small class="fs-6 opacity-75">Odgovorite na sledeća pitanja ili rešite kodne zadatke</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body p-4" style="background-color: #f8f9fa;">
+            <form action="/Test/Submit" method="post" id="testForm">
+
+                @Html.AntiForgeryToken()
+
+                @for (int i = 0; i < Model.Count; i++)
+                {
+                    var item = Model[i];
+
+                    <div class="card mb-5 border-0 shadow-sm rounded-3 overflow-hidden">
+                        <div class="p-3 bg-white border-bottom">
+                            <h5 class="card-title mb-0 fw-bold" style="color: #2c3e50;">
+                                <span class="badge me-2" style="background-color: #8fb997; font-size: 1rem;">@(i + 1)</span>
+                                @item.Pitanje.PitanjeTekst
+                            </h5>
+                        </div>
+
+                        <div class="card-body p-0">
+                            @if (!string.IsNullOrEmpty(item.Pitanje.BlokKod))
+                            {
+                                <div class="editor-wrapper text-start w-100" style="background-color: #1e1e1e;">
+
+                                    <div class="px-3 py-2 text-white-50 d-flex justify-content-between align-items-center" style="background-color: #2d2d2d; border-bottom: 1px solid #333;">
+                                        <small class="font-monospace"><i class="bi bi-filetype-cs"></i> Program.cs</small>
+                                        <button type="button" id="run-btn-@item.Pitanje.PitanjeId" class="btn btn-sm btn-success px-4 fw-bold" onclick="runCode(@item.Pitanje.PitanjeId)">
+                                            ▶ Pokreni kod
+                                        </button>
+                                    </div>
+
+                                    <div class="px-3 pt-2 bg-dark">
+                                        <pre class="mb-0" style="color: #569cd6; font-size: 14px; font-family: 'Consolas', monospace; line-height: 1.4;">using System;
+        public class Program
+        {
+            public static void Main()
+            {</pre>
+                                    </div>
+
+                                    <div class="position-relative bg-dark">
+                                        <textarea id="editor_@item.Pitanje.PitanjeId"
+                                          class="form-control font-monospace px-3 text-light w-100"
+                                          spellcheck="false"
+                                          style="height: 180px; background-color: #1e1e1e; border: none; border-left: 3px solid #f1c40f; border-radius: 0; resize: vertical; outline: none; box-shadow: none; font-size: 14px; line-height: 1.4;">@item.Pitanje.BlokKod</textarea>
+                                    </div>
+
+                                    <div class="px-3 pb-2 bg-dark">
+                                        <pre class="mb-0" style="color: #569cd6; font-size: 14px; font-family: 'Consolas', monospace; line-height: 1.4;">    }
+        }</pre>
+                                    </div>
+
+                                    <div class="p-3 bg-black border-top border-secondary">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <small class="text-white-50 text-uppercase" style="font-size: 11px; letter-spacing: 1px;">Konzola / Output</small>
+                                            <span id="status_@item.Pitanje.PitanjeId" style="font-size: 11px; color: #888;">Spremno</span>
+                                        </div>
+                                        <pre id="output_@item.Pitanje.PitanjeId" class="mb-0"
+                                             style="color: #0f0; min-height: 40px; font-size: 14px; font-family: 'Consolas', monospace; white-space: pre-wrap;">Čeka se pokretanje...</pre>
+                                    </div>
+                                </div>
+
+                                <input type="hidden" name="pitanje_kod_@item.Pitanje.PitanjeId" id="hidden_output_@item.Pitanje.PitanjeId" />
+                            }
+                            else
+                            {
+
+                                int brojTacnihOdgovora = item.PonudjeniOdgovori.Count(o => o.OdgovorTacnost == true || o.OdgovorTacnost.ToString() == "1" || o.OdgovorTacnost.ToString().ToLower() == "true");
+
+                                string inputTip = brojTacnihOdgovora > 1 ? "checkbox" : "radio";
+                                string isRequired = brojTacnihOdgovora > 1 ? "" : "required";
+
+                                <div class="list-group list-group-flush p-2">
+                                    @if (brojTacnihOdgovora > 1)
+                                    {
+                                        <div class="px-4 pt-2 pb-1 text-muted">
+                                            <small class="fw-bold text-warning">💡 Ovo pitanje ima više tačnih odgovora. Označite sve tačne opcije.</small>
+                                        </div>
+                                    }
+                                    @foreach (var odg in item.PonudjeniOdgovori)
+                                    {
+                                        <label class="list-group-item border-0 rounded mb-1 d-flex align-items-center py-3 px-4 odg-label" style="cursor: pointer; transition: 0.2s;">
+                                            <input class="form-check-input me-3 shadow-none"
+                                                   type="@inputTip"
+                                                   name="pitanje_@item.Pitanje.PitanjeId"
+                                                   value="@odg.OdgovorId"
+                                                   @isRequired
+                                                   style="transform: scale(1.2); border-radius: @(inputTip == "checkbox" ? "4px" : "50%");">
+                                            <span class="fs-5 text-dark">@odg.OdgovorTekst</span>
+                                        </label>
+                                    }
+                                </div>
+                            }
+                            
+                            
+                        </div>
+                    </div>
+                }
+
+                <div class="d-grid gap-2 mt-5 mb-3">
+                    <button type="submit" class="btn btn-lg text-white shadow fw-bold submit-btn" style="background-color: #8fb997; padding: 15px; font-size: 1.2rem;">
+                        🏁 Završi test i pošalji odgovore
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.addEventListener('beforeunload', function (e) {
+        if (!document.getElementById("testForm").dataset.submitted) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+
+    document.getElementById("testForm").onsubmit = function() {
+        this.dataset.submitted = "true";
+    };
+</script>
+
+<script>
+    function runCode(id) {
+        const userInput = document.getElementById("editor_" + id).value;
+        const outputField = document.getElementById("output_" + id);
+        const hiddenInput = document.getElementById("hidden_output_" + id);
+        const statusSpan = document.getElementById("status_" + id);
+        const runBtn = document.getElementById("run-btn-" + id);
+
+        const fullCode = `using System;\npublic class Program\n{\n    public static void Main()\n    {\n        ${userInput}\n    }\n}`;
+
+        statusSpan.textContent = "KOMPAJLIRANJE...";
+        statusSpan.style.color = "#f1c40f";
+        outputField.textContent = "Šaljem kod serveru...";
+        outputField.style.color = "#f1c40f";
+        runBtn.disabled = true;
+        runBtn.textContent = "⌛ Sačekajte...";
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+        fetch("/api/compiler/run", {
+            method: "POST",
+            headers: {
+                "Content-Type": "text/plain",
+                "RequestVerificationToken": token
+            },
+            body: fullCode
+        })
+        .then(res => {
+            if(!res.ok) {
+                throw new Error("Greška sa statusom: " + res.status);
+            }
+            return res.text();
+        })
+        .then(text => {
+            statusSpan.textContent = "ZAVRŠENO";
+            statusSpan.style.color = "#2ecc71";
+            outputField.textContent = text;
+            outputField.style.color = "#0f0";
+
+            hiddenInput.value = text.trim();
+        })
+        .catch(err => {
+            statusSpan.textContent = "GREŠKA";
+            statusSpan.style.color = "#e74c3c";
+            outputField.textContent = "Greška u komunikaciji sa API-jem (Mogući problem sa tokenom ili mrežom): " + err.message;
+            outputField.style.color = "#ff6b6b";
+        })
+        .finally(() => {
+            runBtn.disabled = false;
+            runBtn.textContent = "▶ Pokreni kod";
+        });
+    }
+
+    document.getElementById("testForm").addEventListener("submit", function() {
+        window.onbeforeunload = null;
+    });
+</script>
+
+<style>
+    .odg-label:hover {
+        background-color: #e9ecef !important;
+        transform: translateX(5px);
+    }
+
+    .form-check-input:checked {
+        background-color: #8fb997;
+        border-color: #8fb997;
+    }
+
+    textarea:focus {
+        background-color: #252526 !important;
+    }
+
+    .submit-btn {
+        transition: all 0.3s ease;
+    }
+
+        .submit-btn:hover {
+            background-color: #7aa182 !important;
+            transform: translateY(-3px);
+        }
+</style>

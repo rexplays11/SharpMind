@@ -1,0 +1,118 @@
+﻿@using SharpMind.Models
+@model SharpMind.Models.Korisnik
+
+@{
+    ViewData["Title"] = "Moj Profil";
+    double procenatPrikaz = ViewBag.ProcenatProgresa ?? 0;
+    int maxPoenaUView = ViewBag.MaxPoenaZaSledeci ?? 0;
+    string sledeciNivoIme = ViewBag.SledeciNivoNaziv ?? "";
+    bool jeMaksimalan = ViewBag.JeMaksimalanNivo ?? false;
+
+    bool isAdmin = User.Identity.IsAuthenticated && User.IsInRole("Admin");
+    bool isProfesor = User.IsInRole("Profesor");
+}
+
+<style>
+
+    .btn:hover {
+        background-color: inherit !important;
+        color: inherit !important;
+        border-color: inherit !important;
+        opacity: 1 !important;
+        text-decoration: none !important;
+    }
+
+
+    .btn-primary:hover {
+        background-color: #0d6efd !important;
+        color: white !important;
+        border-color: #0d6efd !important;
+    }
+
+
+    .btn-outline-primary:hover {
+        background-color: transparent !important;
+        color: #0d6efd !important;
+        border-color: #0d6efd !important;
+    }
+</style>
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow border-0 text-center p-4" style="border-radius: 12px;">
+                <div class="mx-auto bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px; font-size: 2rem;">
+                    @if (!string.IsNullOrEmpty(Model.KorisnikIme))
+                    {
+                        @Model.KorisnikIme.Substring(0, 1).ToUpper()
+                    }
+                </div>
+                <h3 class="fw-bold text-dark mb-1">@Model.KorisnikIme</h3>
+                <p class="text-muted small mb-3">@Model.Uloga?.UlogaNaziv</p>
+                <hr class="text-muted">
+                <div class="d-grid gap-2">
+                    <a href="/Korisnici/Azuriranje/@Model.KorisnikId" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil-square"></i> Izmeni profil
+                    </a>
+                    <a href="/Rezultati/MojPregled?korisnikId=@Model.KorisnikId" class="btn btn-primary">
+                        <i class="bi bi-trophy"></i> Moji Rezultati
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow border-0 p-4" style="border-radius: 12px;">
+                <h4 class="fw-bold mb-4 text-dark">Informacije o nalogu</h4>
+
+                <div class="row mb-3 border-bottom pb-2">
+                    <div class="col-sm-4 text-muted">Datum registracije:</div>
+                    <div class="col-sm-8 fw-medium text-dark">@Model.KorisnikDatumRegistracije.ToString("dd. MMMM yyyy.")</div>
+                </div>
+
+                <div class="row mb-3 border-bottom pb-2">
+                    <div class="col-sm-4 text-muted">Trenutni Nivo:</div>
+                    <div class="col-sm-8">
+                        <span class="badge bg-info text-dark px-3 py-2 rounded-pill fw-bold">
+                            <i class="bi bi-star-fill me-1"></i> @Model.Nivo?.NazivNivoa
+                        </span>
+                    </div>
+                </div>
+
+                <div class="row mb-4 border-bottom pb-2">
+                    <div class="col-sm-4 text-muted">Ukupno poena:</div>
+                    <div class="col-sm-8 fw-bold text-primary fs-5">@Model.UkupnoPoena pts</div>
+                </div>
+
+                <h5 class="fw-bold mb-3 text-dark">
+                    @if (jeMaksimalan)
+                    {
+                        <span>Čestitamo! Dostigli ste <span class="text-success">maksimalan nivo</span></span>
+                    }
+                    else
+                    {
+                        <span>Napredak do nivoa: <span class="text-success">@sledeciNivoIme</span></span>
+                    }
+                </h5>
+
+                <div class="progress" style="height: 22px; border-radius: 11px; background-color: #e9ecef; overflow: hidden;">
+                    <div class="progress-bar bg-success progress-bar-striped progress-bar-animated fw-bold"
+                         style="width: @procenatPrikaz.ToString("0")%">
+                        @procenatPrikaz.ToString("0")%
+                    </div>
+                </div>
+
+                <small class="text-muted mt-2 d-block">
+                    @if (jeMaksimalan)
+                    {
+                        <span>Nema daljih nivoa. Vi ste apsolutni šampion sa ukupno <strong>@Model.UkupnoPoena</strong> poena!</span>
+                    }
+                    else
+                    {
+                        <span>Ciljna granica za sledeći rang je <strong>@maxPoenaUView</strong> poena (Trenutni skor: @Model.UkupnoPoena / @maxPoenaUView).</span>
+                    }
+                </small>
+            </div>
+        </div>
+    </div>
+</div>

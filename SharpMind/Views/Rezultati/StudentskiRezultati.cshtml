@@ -1,0 +1,213 @@
+﻿@model IEnumerable<SharpMind.Models.Rezultat>
+
+@{
+    ViewData["Title"] = "Rezultati Studenata";
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+    string currentSearch = ViewBag.CurrentSearch ?? "";
+    string currentTip = ViewBag.CurrentTip ?? "";
+    string currentSort = ViewBag.CurrentSort ?? "";
+}
+
+<div class="container mt-5">
+    <div class="card shadow border-2 border-dark mb-4" style="border-radius: 12px;">
+        <div class="card-body bg-light" style="border-radius: 10px;">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h2 class="fw-black text-dark mb-0 text-uppercase">
+                        <i class="bi bi-people-fill text-primary me-2"></i>
+                        Rezultati Studenata
+                    </h2>
+                    <p class="text-muted mb-0">
+                        @if (ViewBag.IsAdmin == true)
+                        {
+                            <span>Administratorski pregled i filtriranje postignuća svih studenata u sistemu.</span>
+                        }
+                        else
+                        {
+                            <span>Pregled postignuća studenata kojima ste Vi mentor.</span>
+                        }
+                    </p>
+                </div>
+                <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                    <span class="badge bg-dark p-2">Ukupno zapisa: @ViewBag.TotalItems</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4 p-3 bg-white" style="border-radius: 12px;">
+        <form method="get" asp-action="StudentskiRezultati" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small fw-bold text-muted">Pretraži studenta</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+                    <input type="text" name="searchName" class="form-control border-start-0 shadow-none"
+                           placeholder="Unesite ime..." value="@currentSearch">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-muted">Tip aktivnosti</label>
+                <select name="tipAktivnosti" class="form-select shadow-none">
+                    <option value="">Sve aktivnosti</option>
+                    <option value="TEST" selected="@(currentTip == "TEST")">Samo Testovi</option>
+                    <option value="KVIZ" selected="@(currentTip == "KVIZ")">Samo Kvizovi</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-muted">Sortiraj po procentu</label>
+                <select name="sortOrder" class="form-select shadow-none">
+                    <option value="">Podrazumevano </option>
+                    <option value="procenat_desc" selected="@(currentSort == "procenat_desc")">Najveći ka najmanjem</option>
+                    <option value="procenat_asc" selected="@(currentSort == "procenat_asc")">Najmanji ka najvećem</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary fw-bold w-100">Filtriraj</button>
+            </div>
+        </form>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info border-2 shadow text-center p-5">
+            <i class="bi bi-info-circle display-4 d-block mb-3"></i>
+            <h4 class="fw-bold">Nema rezultata za zadate kriterijume.</h4>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive mb-4">
+            <table class="table table-hover border-2 border-dark shadow bg-white" style="border-radius: 12px; overflow: hidden;">
+                <thead class="table-dark text-uppercase small">
+                    <tr>
+                        <th class="py-3 ps-4">Student</th>
+                        <th class="py-3">Mentor</th>
+                        <th class="py-3">Tip</th>
+                        <th class="py-3">Nivo</th>
+                        <th class="py-3 text-center">Datum</th>
+                        <th class="py-3 text-center">Poeni</th>
+                        <th class="py-3 text-center">Procenat</th>
+                    </tr>
+                </thead>
+                <tbody class="align-middle">
+                    @foreach (var r in Model)
+                    {
+                        double procenat = (double)r.OsvojeniPoeni / (r.UkupnoPoena > 0 ? r.UkupnoPoena : 1) * 100;
+
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-bold text-dark">@r.Korisnik?.KorisnikIme</div>
+                                <div class="small text-muted">ID Studenta: #@r.KorisnikId</div>
+                            </td>
+
+                            <td>
+                                @if (r.Korisnik?.Profesor != null)
+                                {
+                                    <div class="fw-bold text-dark">
+                                        <i class="bi bi-person-badge text-secondary me-1"></i> @r.Korisnik.Profesor.KorisnikIme
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary rounded-pill px-2 py-1 small">
+                                        Nema mentora
+                                    </span>
+                                }
+                            </td>
+
+                            <td>
+                                @if (r.TipAktivnosti?.ToUpper() == "TEST")
+                                {
+                                    <span class="badge bg-danger text-uppercase p-2 border border-dark" style="font-size: 0.7rem;">
+                                        <i class="bi bi-file-earmark-text-fill"></i> TEST
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success text-uppercase p-2 border border-dark" style="font-size: 0.7rem;">
+                                        <i class="bi bi-lightning-fill"></i> KVIZ
+                                    </span>
+                                }
+                            </td>
+
+                            <td>
+                                <div class="fw-bold">@r.Nivo?.NazivNivoa</div>
+                            </td>
+
+                            <td class="text-center text-muted">
+                                @r.DatumPolaganja.ToString("dd.MM.yyyy.")
+                            </td>
+
+                            <td class="text-center">
+                                <span class="fw-black h5 mb-0">@r.OsvojeniPoeni</span>
+                                <small class="text-muted">/ @r.UkupnoPoena</small>
+                            </td>
+
+                            <td class="text-center">
+                                <div class="d-flex align-items-center justify-content-center">
+                                    <div class="progress border border-dark flex-grow-1 me-2" style="height: 10px; border-radius: 5px; min-width: 100px;">
+                                        <div class="progress-bar @(procenat >= 70 ? "bg-success" : (procenat >= 50 ? "bg-warning" : "bg-danger"))"
+                                             style="width: @procenat.ToString("0")%"></div>
+                                    </div>
+                                    <small class="fw-bold">@procenat.ToString("0")%</small>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (totalPages > 1)
+        {
+            <nav aria-label="Navigacija po stranicama">
+                <ul class="pagination justify-content-center shadow-sm p-2 bg-light rounded border border-2 border-dark d-inline-flex">
+
+                    <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                        <a class="page-link border-0 text-dark fw-bold rounded me-1"
+                           href="@Url.Action("StudentskiRezultati", new { searchName = currentSearch, tipAktivnosti = currentTip, sortOrder = currentSort, page = currentPage - 1 })">
+                            <i class="bi bi-chevron-left"></i> Prethodna
+                        </a>
+                    </li>
+
+                    @for (int i = 1; i <= totalPages; i++)
+                    {
+                        <li class="page-item @(currentPage == i ? "active" : "")">
+                            <a class="page-link border-0 fw-bold rounded mx-1 @(currentPage == i ? "bg-primary text-white" : "text-dark bg-transparent")"
+                               href="@Url.Action("StudentskiRezultati", new { searchName = currentSearch, tipAktivnosti = currentTip, sortOrder = currentSort, page = i })">
+                                @i
+                            </a>
+                        </li>
+                    }
+
+                    <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                        <a class="page-link border-0 text-dark fw-bold rounded ms-1"
+                           href="@Url.Action("StudentskiRezultati", new { searchName = currentSearch, tipAktivnosti = currentTip, sortOrder = currentSort, page = currentPage + 1 })">
+                            Sledeća <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+
+                </ul>
+            </nav>
+        }
+    }
+</div>
+
+<style>
+    .fw-black {
+        font-weight: 900;
+    }
+
+    .table thead th {
+        border-bottom: 2px solid black;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    .pagination .page-link:focus {
+        box-shadow: none;
+    }
+</style>

@@ -1,0 +1,184 @@
+﻿@model SharpMind.Models.Korisnik
+
+@{
+    string boja = "#0d6efd"; 
+    ViewData["Title"] = "Registracija novog korisnika";
+
+    bool imaGreskuPoena = ViewData.ModelState["UkupnoPoena"]?.Errors.Count > 0;
+    bool isAdmin = ViewBag.IsAdmin ?? false;
+}
+
+<div class="container mt-5">
+    <div class="col-md-7 mx-auto">
+        <div class="card shadow-lg border border-2 border-dark" style="border-radius:15px;">
+            <div class="card-header text-white text-center py-3" style="background:@boja; border-radius: 13px 13px 0 0;">
+                <h5 class="fw-bold text-uppercase mb-0">
+                    <i class="bi bi-person-plus-fill me-2"></i> Kreiranje korisnika
+                </h5>
+            </div>
+
+            <div class="card-body p-5 bg-white">
+                <form asp-action="Registracija" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label fw-black text-dark text-uppercase small">Korisničko ime</label>
+                            <input type="text" name="KorisnikIme"
+                                   class="form-control form-control-lg border-2 shadow-sm @(ViewData.ModelState["KorisnikIme"]?.Errors.Count > 0 ? "border-danger is-invalid" : "border-dark")"
+                                   value="@Model?.KorisnikIme" required style="border-radius: 8px;" />
+
+                            @if (ViewData.ModelState["KorisnikIme"]?.Errors.Count > 0)
+                            {
+                                <div class="text-danger fw-bold small mt-2">
+                                    <i class="bi bi-exclamation-octagon-fill"></i>
+                                    @ViewData.ModelState["KorisnikIme"].Errors[0].ErrorMessage
+                                </div>
+                            }
+                        </div>
+
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label fw-black text-dark text-uppercase small">Lozinka</label>
+                            <div class="input-group">
+                                <input id="passInput" name="KorisnikLozinka" type="text"
+                                       class="form-control form-control-lg border-2 border-dark shadow-sm"
+                                       value="@Model?.KorisnikLozinka" required style="border-radius: 8px 0 0 8px;" />
+                                <button type="button" class="btn btn-dark border-2 border-dark" onclick="generatePassword()">
+                                    <i class="bi bi-shuffle"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label fw-black text-dark text-uppercase small">Uloga</label>
+                            @if (isAdmin)
+                            {
+                                <select name="UlogaId" class="form-select form-select-lg border-2 border-dark shadow-sm" style="border-radius: 8px;">
+                                    @foreach (var u in ViewBag.Uloge)
+                                    {
+                                        <option value="@u.UlogaId" selected="@(Model?.UlogaId == u.UlogaId)">@u.UlogaNaziv</option>
+                                    }
+                                </select>
+                            }
+                            else
+                            {
+                                <input type="text" class="form-control form-control-lg border-2 border-dark shadow-sm bg-light fw-bold text-secondary"
+                                       value="Student (Ograničeno)" disabled style="border-radius: 8px;" />
+                                if (ViewBag.Uloge != null && ViewBag.Uloge.Count > 0)
+                                {
+                                    <input type="hidden" name="UlogaId" value="@ViewBag.Uloge[0].UlogaId" />
+                                }
+                            }
+                        </div>
+
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label fw-black text-dark text-uppercase small">Nivo</label>
+                            <select name="NivoId" class="form-select form-select-lg border-2 border-dark shadow-sm" style="border-radius: 8px;">
+                                @foreach (var n in ViewBag.Nivoi)
+                                {
+                                    <option value="@n.NivoId" selected="@(Model?.NivoId == n.NivoId)">
+                                        @n.NazivNivoa (Limit: @n.GranicniPoeniNivoa)
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <hr class="my-4 border-2 border-dark opacity-25">
+
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label fw-black text-dark text-uppercase small">Početni poeni</label>
+                            <input type="number" name="UkupnoPoena"
+                                   class="form-control form-control-lg border-2 shadow-sm @(imaGreskuPoena ? "border-danger is-invalid" : "border-dark")"
+                                   value="@(Model?.UkupnoPoena ?? 0)" required style="border-radius: 8px;" />
+
+                            @if (imaGreskuPoena)
+                            {
+                                <div class="text-danger fw-bold small mt-2">
+                                    <i class="bi bi-exclamation-triangle-fill"></i>
+                                    @ViewData.ModelState["UkupnoPoena"].Errors[0].ErrorMessage
+                                </div>
+                            }
+                        </div>
+
+
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label fw-black text-dark text-uppercase small">Datum registracije</label>
+                            @if (isAdmin)
+                            {
+                                <input name="KorisnikDatumRegistracije" type="datetime-local"
+                                       class="form-control form-control-lg border-2 border-dark shadow-sm"
+                                       value="@(Model?.KorisnikDatumRegistracije.ToString("yyyy-MM-ddTHH:mm") ?? DateTime.Now.ToString("yyyy-MM-ddTHH:mm"))"
+                                       required style="border-radius: 8px;" />
+                            }
+                            else
+                            {
+                                <input type="text" class="form-control form-control-lg border-2 border-dark shadow-sm bg-light text-secondary fw-bold"
+                                       value="@DateTime.Now.ToString("dd.MM.yyyy HH:mm") (Trenutno vreme)" disabled style="border-radius: 8px;" />
+                                <input type="hidden" name="KorisnikDatumRegistracije" value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+                            }
+                        </div>
+                    </div>
+
+                    <div class="mb-5">
+                        <label class="form-label fw-black text-dark text-uppercase small">Profesor / Mentor</label>
+                        @if (isAdmin)
+                        {
+                            <select name="ProfesorId" class="form-select form-select-lg border-2 border-dark shadow-sm" style="border-radius: 8px;">
+                                <option value="">-- Bez mentora --</option>
+                                @foreach (var p in ViewBag.Profesori)
+                                {
+                                    <option value="@p.KorisnikId" selected="@(p.KorisnikId == Model?.ProfesorId)">
+                                        @p.KorisnikIme
+                                    </option>
+                                }
+                            </select>
+                        }
+                        else
+                        {
+                            <input type="text" class="form-control form-control-lg border-2 border-dark shadow-sm bg-light text-secondary fw-bold"
+                                   value="@User.Identity.Name (Ti si mentor)" disabled style="border-radius: 8px;" />
+                            <input type="hidden" name="ProfesorId" value="@ViewBag.TrenutniProfesorId" />
+                        }
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <button type="submit" class="btn text-white w-100 fw-bold py-3 text-uppercase shadow"
+                                    style="background:@boja; border-radius: 10px; letter-spacing: 1px;">
+                                <i class="bi bi-person-check-fill me-2"></i> Sačuvaj korisnika
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="/Home/Index" class="btn btn-dark fw-bold w-100 py-3 shadow text-uppercase" style="border-radius: 8px;">
+                                <i class="bi bi-arrow-left-square-fill me-2"></i> Odustani
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fw-black {
+        font-weight: 900 !important;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        function generatePassword() {
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!#%";
+            let pass = "";
+            for (let i = 0; i < 10; i++) {
+                pass += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById("passInput").value = pass;
+        }
+    </script>
+}

@@ -1,0 +1,58 @@
+﻿@model IEnumerable<SharpMind.Models.Potpoglavlje>
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark">
+                <i class="bi bi-layers-half text-primary"></i>
+                Potpoglavlja za: <span class="text-primary">@ViewBag.ImePoglavlja</span>
+            </h2>
+            <a href="/Poglavlja" class="btn btn-sm btn-outline-secondary mt-2">
+                <i class="bi bi-arrow-left"></i> Nazad na sva poglavlja
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">ID</th>
+                            <th>Naziv Potpoglavlja</th>
+                            <th class="text-end pe-4">Akcije</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="3" class="text-center py-5 text-muted">
+                                    Ovo poglavlje još uvek nema dodatih potpoglavlja.
+                                </td>
+                            </tr>
+                        }
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="ps-4 text-muted">#@item.PotpoglavljeId</td>
+                                <td class="fw-bold">@item.NazivPotpoglavlja</td>
+                                <td class="text-end pe-4">
+                                    <div class="btn-group">
+                                        <a href="/Potpoglavlja/Edit/@item.PotpoglavljeId" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="/Potpoglavlja/Delete/@item.PotpoglavljeId" class="btn btn-sm btn-outline-danger">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,58 @@
+﻿@using SharpMind.Models
+@model Nivo
+@{
+    string boja = "#6A5ACD";
+}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card shadow-lg border border-2 border-dark" style="border-radius: 15px; overflow: hidden;">
+                <div class="card-header text-white py-3 text-center border-bottom border-2 border-dark" style="background-color:@boja;">
+                    <h5 class="mb-0 fw-bold text-uppercase">
+                        <i class="bi bi-pencil-square me-2"></i> Izmeni Nivo
+                    </h5>
+                </div>
+                <div class="card-body p-5 bg-white">
+                    <form method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="NivoId" value="@Model.NivoId" />
+                        <div asp-validation-summary="ModelOnly" class="text-danger small fw-bold mb-3 list-unstyled"></div>
+                        <div class="mb-4 text-center">
+                            <div class="badge bg-dark px-3 py-2 mb-4 shadow-sm border border-1 border-white">
+                                <span class="text-uppercase small fw-bold">Nivo ID:</span> #@Model.NivoId
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-black text-dark text-uppercase small">Naziv nivoa</label>
+                            <input type="text" name="NazivNivoa" value="@Model.NazivNivoa" class="form-control form-control-lg border-2 border-dark shadow-sm" required style="border-radius: 8px;" />
+                            <span asp-validation-for="NazivNivoa" class="text-danger small fw-bold mt-1 d-block"></span>
+                        </div>
+                        <div class="mb-5">
+                            <label class="form-label fw-black text-dark text-uppercase small">Granični poeni</label>
+                            <input type="number" name="GranicniPoeniNivoa" value="@Model.GranicniPoeniNivoa" class="form-control form-control-lg border-2 border-dark shadow-sm" required style="border-radius: 8px;" />
+                            <span asp-validation-for="GranicniPoeniNivoa" class="text-danger small fw-bold mt-1 d-block"></span>
+                        </div>
+                        <div class="d-grid gap-3">
+                            <button type="submit" class="btn text-white fw-bold py-3 shadow text-uppercase" style="background-color:@boja; border-radius: 8px;">
+                                <i class="bi bi-check-lg me-2"></i> Sačuvaj izmene
+                            </button>
+                            <a href="/Nivoi/Index" class="btn btn-dark fw-bold py-3 shadow text-uppercase" style="border-radius: 8px;">
+                                <i class="bi bi-arrow-left me-2"></i> Nazad na listu
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    .fw-black {
+        font-weight: 900 !important;
+    }
+
+    .form-control:focus {
+        border-color: @boja !important;
+        box-shadow: 0 0 0 0.25rem rgba(106, 90, 205, 0.15);
+    }
+</style>

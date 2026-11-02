@@ -1,0 +1,267 @@
+﻿<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - SharpMind</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+
+    <style>
+        :root {
+            --main-green: #8fb997;
+            --dark-sidebar: #2c3e50;
+            --light-bg: #f8f9fa;
+            --admin-red: #ff6b6b;
+        }
+
+        body {
+            overflow-x: hidden;
+            background-color: var(--light-bg);
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        #wrapper {
+            display: flex;
+            width: 100%;
+            transition: all .3s;
+        }
+
+        #sidebar-wrapper {
+            min-height: 100vh;
+            width: 250px;
+            background-color: var(--dark-sidebar);
+            color: white;
+            transition: all .3s;
+            flex-shrink: 0;
+        }
+
+        #wrapper.toggled #sidebar-wrapper {
+            margin-left: -250px;
+        }
+
+        .sidebar-heading {
+            padding: 25px 20px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--main-green);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .list-group-item {
+            background-color: transparent;
+            color: #ecf0f1;
+            border: none;
+            padding: 12px 20px;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+        }
+
+            .list-group-item:hover {
+                background-color: rgba(255,255,255,0.1);
+                color: var(--main-green);
+                padding-left: 28px;
+            }
+
+        .admin-section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--admin-red);
+            font-weight: bold;
+            margin-top: 25px;
+            padding: 0 20px;
+        }
+
+        #page-content-wrapper {
+            width: 100%;
+            background-color: var(--light-bg);
+        }
+
+        .navbar {
+            padding: 15px 25px;
+            background: #fff !important;
+        }
+
+        .side-panel {
+            position: fixed;
+            left: 250px;
+            top: 0;
+            height: 100vh;
+            width: 300px;
+            z-index: 1000;
+            box-shadow: 5px 0 15px rgba(0,0,0,0.1);
+            overflow-y: auto;
+            transition: all 0.3s;
+        }
+
+        #wrapper.toggled .side-panel {
+            left: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="d-flex" id="wrapper">
+
+        <div id="sidebar-wrapper">
+            <div class="sidebar-heading">
+                SharpMind 🧠
+            </div>
+
+            <div class="list-group list-group-flush">
+                <a href="/Home/Index" class="list-group-item">
+                    <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                </a>
+
+                @if (User.Identity.IsAuthenticated)
+                {
+
+                    @if (User.IsInRole("Profesor") || User.IsInRole("Admin"))
+                    {
+                        <a href="/Korisnici/Registracija" class="list-group-item">
+                            <i class="bi bi-person-plus-fill me-2"></i> Registracija Studenta
+                        </a>
+
+                        <a href="/Pitanja/Objedinjeno" class="list-group-item">
+                            <i class="bi bi-patch-question me-2"></i> Pitanja i Odgovori
+                        </a>
+
+                        <a href="/Rezultati/StudentskiRezultati" class="list-group-item">
+                            <i class="bi bi-people-fill me-2"></i> Rezultati Studenata
+                        </a>
+                        <a href="/Korisnici/ListaStudenata" class="list-group-item">
+                            <i class="bi bi-people me-2"></i> Lista studenata
+                        </a>
+                    }
+
+                    <a href="/Test/Index" class="list-group-item">
+                        <i class="bi bi-award me-2"></i> Test
+                    </a>
+
+                    <a href="/Korisnici/Profil" class="list-group-item">
+                        <i class="bi bi-person-circle me-2"></i> Moj Profil
+                    </a>
+
+                    <a href="/Compiler/Index" class="list-group-item">
+                        <i class="bi bi-code-slash me-2"></i> C# Compiler
+                    </a>
+                }
+
+                <a href="/Lekcije/PregledLekcija" class="list-group-item">
+                    <i class="bi bi-journal-bookmark me-2"></i> Nastavni Plan
+                </a>
+
+                <a href="/Kviz/Index" class="list-group-item">
+                    <i class="bi bi-controller me-2"></i> Kviz
+                </a>
+                <a href="/Home/Onama/Index" class="list-group-item">
+                    <i class="bi bi-info-circle me-2"></i> O nama
+                </a>
+                
+
+                @if (User.Identity.IsAuthenticated && User.IsInRole("Admin"))
+                {
+                    <div class="admin-section-title">Admin Panel</div>
+
+                    <a href="/Pitanja/Index" class="list-group-item admin-link">
+                        <i class="bi bi-question-square me-2" style="color:#c5c8c1;"></i> Pitanja
+                    </a>
+                    <a href="/Odgovori/Index" class="list-group-item">
+                        <i class="bi bi-check2-circle me-2" style="color:#DC143C;"></i> Odgovori
+                    </a>
+                    <a href="/Poglavlja/Index" class="list-group-item">
+                        <i class="bi bi-card-text me-2" style="color:#4169E1;"></i> Poglavlja
+                    </a>
+                    <a href="/Potpoglavlja/Index" class="list-group-item">
+                        <i class="bi bi-card-checklist me-2" style="color:#2E8B57;"></i> Potpoglavlja
+                    </a>
+                    <a href="/Lekcije/Index" class="list-group-item">
+                        <i class="bi bi-book me-2" style="color:#228B22;"></i> Lekcije
+                    </a>
+                    <a href="/Korisnici/Index" class="list-group-item">
+                        <i class="bi bi-people me-2" style="color:#FF8C00;"></i> Korisnici
+                    </a>
+                    <a href="/Rezultati/Index" class="list-group-item">
+                        <i class="bi bi-trophy me-2" style="color:#DAA520"></i> Rezultati
+                    </a>
+                    <a href="/Nivoi/Index" class="list-group-item">
+                        <i class="bi bi-bar-chart-line me-2" style="color:#6A5ACD;"></i> Nivoi
+                    </a>
+                    <a href="/Uloge/Index" class="list-group-item">
+                        <i class="bi bi-file-person me-2" style="color:#191970;"></i> Uloge
+                    </a>
+                }
+            </div>
+        </div>
+
+        <div id="page-content-wrapper">
+
+            <nav class="navbar navbar-expand navbar-light shadow-sm">
+                <button class="btn btn-outline-secondary btn-sm" onclick="toggleSidebar()">
+                    <i class="bi bi-list fs-5"></i>
+                </button>
+
+                <div class="ms-auto d-flex align-items-center">
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        <span class="me-3 fw-bold text-secondary small">
+                            Dobrodošli: <span class="text-dark">@User.Identity.Name</span>
+                        </span>
+                        <a href="/Account/Logout" class="btn btn-sm btn-outline-danger px-3 rounded-pill">Odjavi se</a>
+                    }
+                    else
+                    {
+                        <span class="me-3 fw-bold text-muted small">
+                            Dobrodošli: <span class="text-success">Gost</span>
+                        </span>
+                        <div class="btn-group">
+                            <a href="/Account/Login" class="btn btn-sm btn-outline-primary px-3 rounded-pill me-2">Prijavi se</a>
+                            <a href="/Account/Register" class="btn btn-sm btn-success px-3 rounded-pill text-white">Registracija</a>
+                        </div>
+                    }
+                </div>
+            </nav>
+
+            <div class="container-fluid p-4">
+
+                @if (TempData["Error"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert" style="border-radius: 10px;">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
+                            <div>@TempData["Error"]</div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                @if (ViewBag.Error != null)
+                {
+                    <div class="alert alert-warning alert-dismissible fade show shadow-sm mb-4" role="alert" style="border-radius: 10px;">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-exclamation-circle-fill fs-4 me-3"></i>
+                            <div>@ViewBag.Error</div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                @RenderBody()
+            </div>
+
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function toggleSidebar() {
+            document.getElementById("wrapper").classList.toggle("toggled");
+        }
+    </script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

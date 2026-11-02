@@ -1,0 +1,80 @@
+﻿@model SharpMind.Models.Potpoglavlje
+@{
+    ViewData["Title"] = "Izmena potpoglavlja";
+    string boja = "#2E8B57";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg border border-2 border-dark" style="border-radius: 15px; overflow: hidden;">
+
+                <div class="card-header text-white py-3 text-center border-bottom border-2 border-dark" style="background-color:@boja;">
+                    <h5 class="mb-0 fw-bold text-uppercase">
+                        <i class="bi bi-pencil-square me-2"></i> Izmeni Potpoglavlje
+                    </h5>
+                </div>
+
+                <div class="card-body p-5 bg-white">
+                    <form method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3 fw-bold small"></div>
+
+                        <input type="hidden" name="PotpoglavljeId" value="@Model.PotpoglavljeId" />
+
+                        <div class="mb-5 text-center">
+                            <div class="badge bg-dark px-3 py-2 shadow-sm border border-1 border-white">
+                                <span class="text-uppercase small fw-bold">Trenutni ID:</span> #@Model.PotpoglavljeId
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Naziv potpoglavlja</label>
+                            <input type="text" name="NazivPotpoglavlja"
+                                   value="@Model.NazivPotpoglavlja"
+                                   class="form-control form-control-lg border-2 border-dark shadow-sm"
+                                   required style="border-radius: 8px;" />
+                            <span asp-validation-for="NazivPotpoglavlja" class="text-danger small fw-bold mt-1 d-block"></span>
+                        </div>
+
+                        <div class="mb-5">
+                            <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Poglavlje</label>
+                            <select name="PoglavljeId" class="form-select form-select-lg border-2 border-dark shadow-sm" style="border-radius: 8px;" required>
+                                @foreach (var p in ViewBag.Poglavlja)
+                                {
+                                    <option value="@p.PoglavljeId" selected="@(p.PoglavljeId == Model.PoglavljeId)">
+                                        @p.PoglavljeNaziv
+                                    </option>
+                                }
+                            </select>
+                            <span asp-validation-for="PoglavljeId" class="text-danger small fw-bold mt-1 d-block"></span>
+                        </div>
+
+                        <div class="d-grid gap-3">
+                            <button type="submit" class="btn text-white fw-bold py-3 shadow text-uppercase" style="background-color:@boja; border-radius: 8px;">
+                                <i class="bi bi-check-lg me-2"></i> Sačuvaj izmene
+                            </button>
+
+                            <a href="/Potpoglavlja/Index" class="btn btn-dark fw-bold py-3 shadow text-uppercase" style="border-radius: 8px;">
+                                <i class="bi bi-arrow-left me-2"></i> Nazad na listu
+                            </a>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fw-black {
+        font-weight: 900 !important;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: @boja !important;
+        box-shadow: 0 0 0 0.25rem rgba(32, 178, 170, 0.15) !important;
+    }
+</style>

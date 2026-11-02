@@ -1,0 +1,164 @@
+﻿@{
+    ViewData["Title"] = "Rezultat Testiranja";
+
+    string greskaPitanja = ViewBag.NedovoljnoPitanja as string;
+
+    double procenat = ViewBag.Procenat ?? 0;
+    bool polozio = procenat >= 70;
+
+    string statusBoja = polozio ? "success" : (procenat >= 50 ? "warning" : "danger");
+
+    string statusIkona = polozio ? "bi-trophy-fill" : (procenat >= 50 ? "bi-exclamation-circle-fill" : "bi-x-octagon-fill");
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden animate__animated animate__fadeIn">
+
+                @if (!string.IsNullOrEmpty(greskaPitanja))
+                {
+                    <div class="py-2 bg-danger"></div>
+                    <div class="card-body p-5 text-center">
+                        <div class="animate__animated animate__bounceIn mb-4">
+                            <div class="display-1 text-danger mb-3">
+                                <i class="bi bi-folder-x"></i>
+                            </div>
+                            <h2 class="fw-bold text-dark">Test je nedostupan</h2>
+                            <p class="lead text-muted mt-3">@greskaPitanja</p>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-5">
+                            <a href="/Home/Index" class="btn btn-dark btn-lg px-5 rounded-pill shadow">
+                                <i class="bi bi-house-door-fill"></i> Nazad na početnu
+                            </a>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="py-2 bg-@statusBoja"></div>
+
+                    <div class="card-body p-5 text-center">
+
+                        @if (ViewBag.LevelUp == true)
+                        {
+                            <div class="animate__animated animate__bounceIn">
+                                <div class="display-1 text-success mb-2">🚀</div>
+                                <h2 class="fw-bold text-success">LEVEL UP!</h2>
+                                <p class="lead">Čestitamo! Napredovali ste na nivo: <span class="badge bg-success">@ViewBag.NoviNivoNaziv</span></p>
+                                <hr />
+                            </div>
+                        }
+                        else if (!polozio)
+                        {
+                            <div class="animate__animated animate__headShake">
+                                <div class="display-1 text-danger mb-3">
+                                    <i class="bi @statusIkona"></i>
+                                </div>
+                                <h2 class="fw-bold text-danger">Test nije položen</h2>
+                                <p class="text-muted">Potrebno je minimum <strong>70%</strong> za prelazak nivoa.</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="animate__animated animate__fadeInUp">
+                                <div class="display-1 text-primary mb-3">
+                                    <i class="bi bi-star-fill"></i>
+                                </div>
+                                <h2 class="fw-bold text-dark">Odličan rad!</h2>
+                                <p class="text-muted">Uspešno ste završili test.</p>
+                            </div>
+                        }
+
+                        <div class="my-5">
+                            <h1 class="display-3 fw-bold @(polozio ? "text-success" : "text-danger")">
+                                @Math.Round(procenat, 1)%
+                            </h1>
+                            <p class="text-uppercase tracking-wider fw-bold text-muted">Tačnost odgovora</p>
+                        </div>
+
+                        <div class="card bg-light border-0 rounded-3 mb-4">
+                            <div class="card-body py-4">
+                                <div class="row">
+                                    <div class="col-4 border-end">
+                                        <p class="small text-muted mb-1">POGOĐENO</p>
+                                        <h4 class="fw-bold mb-0">@ViewBag.BrojPoena / @ViewBag.Ukupno</h4>
+                                    </div>
+                                    <div class="col-4 border-end">
+                                        <p class="small text-muted mb-1">OSVOJENO</p>
+                                        <h4 class="fw-bold mb-0 text-primary">+@ViewBag.Osvojeno</h4>
+                                    </div>
+                                    <div class="col-4">
+                                        <p class="small text-muted mb-1">UKUPNO BROJ POENA</p>
+                                        <h4 class="fw-bold mb-0 text-dark">@ViewBag.UkupnoPoenaKorisnika</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(ViewBag.Poruka))
+                        {
+                            <div class="alert alert-warning border-0 shadow-sm d-flex align-items-center text-start animate__animated animate__pulse animate__infinite">
+                                <i class="bi bi-shield-lock-fill fs-3 me-3"></i>
+                                <div>
+                                    <small class="d-block fw-bold">NAPOMENA:</small>
+                                    <span>@ViewBag.Poruka</span>
+                                </div>
+                            </div>
+                        }
+
+                        @if (procenat < 50)
+                        {
+                            <div class="alert alert-danger border-0 d-flex align-items-center text-start">
+                                <i class="bi bi-info-circle-fill me-2"></i>
+                                <small>Pošto je procenat ispod 50%, osvojili ste samo polovinu poena za tačne odgovore.</small>
+                            </div>
+                        }
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
+                            <a href="@Url.Action("Index", "Test")" class="btn btn-outline-secondary btn-lg px-4 rounded-pill">
+                                <i class="bi bi-arrow-counterclockwise"></i> Ponovi test
+                            </a>
+                           
+                            <a href="@Url.Action("Index", "Home")" class="btn btn-dark btn-lg px-5 rounded-pill shadow">
+                                <i class="bi bi-house-door-fill"></i> Početna
+                            </a>
+                        </div>
+                    </div>
+                }
+
+                <div class="card-footer bg-white border-0 pb-4 text-center">
+                    <small class="text-muted">SharpMind sistem za učenje v2.0</small>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style>
+    body {
+        background-color: #f0f2f5;
+    }
+
+    .tracking-wider {
+        letter-spacing: 0.1rem;
+    }
+
+    .display-1 {
+        font-size: 5rem;
+    }
+
+    .rounded-4 {
+        border-radius: 1.5rem !important;
+    }
+
+    .btn-lg {
+        padding: 0.8rem 2rem;
+        font-weight: 600;
+    }
+</style>

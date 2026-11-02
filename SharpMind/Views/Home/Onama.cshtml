@@ -1,0 +1,120 @@
+﻿@{
+    ViewData["Title"] = "O nama";
+    string plava = "#4169E1";
+}
+
+<div class="container mt-5 mb-5">
+    <div class="row align-items-center p-5 mb-5 border border-3 border-dark shadow-lg bg-white" style="border-radius: 20px;">
+        <div class="col-lg-8 text-center text-lg-start">
+            <div class="badge bg-dark text-uppercase mb-3 px-3 py-2 fw-bold" style="letter-spacing: 1px;">
+                <i class="bi bi-code-slash text-primary me-1"></i> Vizija i Misija
+            </div>
+            <h1 class="display-3 fw-black text-dark text-uppercase mb-3">
+                O nama <span style="color: @plava;">.</span>
+            </h1>
+            <p class="lead fs-4 text-muted mb-4">
+                <strong>SharpMind</strong> je interaktivna edukativna platforma razvijena sa ciljem da modernizuje i olakša učenje
+                C# programiranja i .NET tehnologija kroz struktuirana lekcije, instant proveru znanja i prilagođene testove.
+            </p>
+
+        </div>
+        <div class="col-lg-4 text-center d-none d-lg-block">
+            <i class="bi bi-info-square-fill" style="font-size: 10rem; color: @plava;"></i>
+        </div>
+    </div>
+
+
+    <div class="row g-4 text-center mb-5">
+        <div class="col-md-4">
+            <div class="card h-100 border-2 border-dark shadow hover-card" style="border-radius: 15px;">
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="mb-3">
+                        <i class="bi bi-diagram-3-fill display-4" style="color: @plava;"></i>
+                    </div>
+                    <h4 class="fw-bold text-uppercase">Struktura</h4>
+                    <p class="text-muted flex-grow-1">Gradivo je pažljivo podeljeno na poglavlja, potpoglavlja i lekcije, prilagođeno svim nivoima znanja.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 border-2 border-dark shadow hover-card" style="border-radius: 15px;">
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="mb-3">
+                        <i class="bi bi-controller display-4" style="color: @plava;"></i>
+                    </div>
+                    <h4 class="fw-bold text-uppercase">Interaktivnost</h4>
+                    <p class="text-muted flex-grow-1">Učenje nije samo čitanje — kroz brze kvizove i zvanične testove direktno primenjuješ usvojene koncepte.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 border-2 border-dark shadow hover-card" style="border-radius: 15px;">
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="mb-3">
+                        <i class="bi bi-graph-up-arrow display-4" style="color: @plava;"></i>
+                    </div>
+                    <h4 class="fw-bold text-uppercase">Napredak</h4>
+                    <p class="text-muted flex-grow-1">Prati svoj razvojni put, otključavaj naprednije lekcije i sagledaj vlastiti napredak iz dana u dan.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="p-4 p-md-5 border border-3 border-dark bg-white shadow-lg" style="border-radius: 20px;">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h3 class="fw-black text-uppercase mb-3">Tehnološka Osnova</h3>
+                <p class="text-muted fs-5 mb-0">
+                    SharpMind je izgrađen oslanjajući se na najsavremenije <strong>ASP.NET Core MVC</strong> standarde, pružajući stabilno,
+                    sigurno i brzo okruženje kako za studente tako i za profesore i administratore.
+                </p>
+            </div>
+            <div class="col-md-4 text-center mt-4 mt-md-0">
+                <div class="p-3 border border-2 border-dark bg-light rounded-3 d-inline-block">
+                    <i class="bi bi-cpu-fill fs-1 me-2" style="color: @plava;"></i>
+                    <span class="fw-black text-uppercase align-middle">C# / .NET Core</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fw-black {
+        font-weight: 900 !important;
+    }
+
+    .hover-card {
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        background-color: white;
+    }
+
+        .hover-card:hover {
+            transform: translateY(-10px);
+            border-color: @plava !important;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15) !important;
+        }
+
+    body {
+        background-color: #f4f7f6;
+    }
+
+    .display-3 {
+        letter-spacing: -2px;
+    }
+
+    .btn-dark {
+        border-radius: 8px;
+        transition: 0.2s;
+        border: 2px solid transparent;
+    }
+
+        .btn-dark:hover {
+            background-color: transparent;
+            color: #212529;
+            border-color: #212529;
+        }
+</style>

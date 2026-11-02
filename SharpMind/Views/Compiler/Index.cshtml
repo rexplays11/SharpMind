@@ -1,0 +1,92 @@
+﻿@model SharpMind.Models.Odgovor
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@{
+    ViewData["Title"] = "C# Compiler";
+    var tokens = Antiforgery.GetAndStoreTokens(Context);
+}
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow border-0" style="border-radius: 12px; overflow: hidden;">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-3">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="bi bi-code-slash me-2"></i> SharpMind C# Playground
+                    </h5>
+                    <button onclick="runCode()" class="btn btn-light fw-bold shadow-sm" id="runBtn" style="border-radius: 8px;">
+                        <i class="bi bi-play-fill"></i> POKRENI KOD
+                    </button>
+                </div>
+
+                <div class="card-body bg-dark p-0">
+                    <textarea id="codeEditor"
+                              class="form-control font-monospace text-light bg-dark border-0 p-4"
+                              rows="16"
+                              style="resize: vertical; font-size: 15px; outline: none; box-shadow: none; font-family: 'Consolas', 'Monaco', monospace; line-height: 1.5;"
+                              placeholder="Unesite vaš C# kod ovde...">using System;
+
+public class Program 
+{
+    public static void Main() 
+    {
+        Console.WriteLine("Pozdrav iz SharpMind Compiler-a!");
+    }
+}</textarea>
+                </div>
+
+                <div class="card-footer bg-light p-4">
+                    <label class="fw-bold text-muted small text-uppercase mb-2 d-block">
+                        <i class="bi bi-terminal-fill me-1"></i> Izlaz iz konzole:
+                    </label>
+                    <pre id="output" class="bg-white p-3 border rounded shadow-sm"
+                         style="min-height: 140px; color: #212529; font-family: 'Consolas', 'Monaco', monospace; white-space: pre-wrap; font-size: 14px; border-color: #dee2e6 !important;">Spreman za izvršavanje...</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        async function runCode() {
+            const code = document.getElementById('codeEditor').value;
+            const outputDiv = document.getElementById('output');
+            const btn = document.getElementById('runBtn');
+
+            outputDiv.innerText = "Kompajliranje na serveru...";
+            outputDiv.style.color = "#212529";
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> Izvršavanje...';
+
+            try {
+                const response = await fetch('@Url.Action("Run", "Compiler")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': '@tokens.RequestToken'
+                    },
+                    body: JSON.stringify(code)
+                });
+
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+
+                    outputDiv.innerText = result.output;
+                    outputDiv.style.color = "#0f5132";
+                } else {
+                    outputDiv.innerText = "Greška: " + (result.error || "Nepoznata greška sa servera.");
+                    outputDiv.style.color = "#b30000";
+                }
+            } catch (err) {
+                outputDiv.innerText = "Došlo je do greške prilikom komunikacije sa serverom.";
+                outputDiv.style.color = "#b30000";
+                console.error(err);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-play-fill"></i> POKRENI KOD';
+            }
+        }
+    </script>
+}

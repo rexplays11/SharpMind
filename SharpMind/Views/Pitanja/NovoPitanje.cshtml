@@ -1,0 +1,158 @@
+﻿@using SharpMind.Models
+@model SharpMind.Models.Pitanje
+@{
+    ViewData["Title"] = "Novo pitanje";
+    string sivaBoja = "#c5c8c1";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7">
+            <div class="card shadow-lg border border-2 border-dark" style="border-radius: 15px; overflow: hidden;">
+
+                <div class="card-header py-3 text-center border-bottom border-2 border-dark" style="background-color:@sivaBoja;">
+                    <h5 class="mb-0 fw-bold text-dark text-uppercase">
+                        <i class="bi bi-plus-circle me-2"></i> Novo Pitanje
+                    </h5>
+                </div>
+
+                <div class="card-body p-5 bg-white">
+                    <form asp-controller="Pitanja" asp-action="NovoPitanje" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-5">
+                            <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Tekst pitanja</label>
+                            <textarea name="PitanjeTekst" class="form-control border-2 border-dark shadow-sm" rows="3" required placeholder="Unesite tekst pitanja ovde..." style="border-radius: 8px;"></textarea>
+                        </div>
+
+                        <input type="hidden" name="PitanjeTip" id="pitanjeTipSkriveno" value="VISESTRUKI_IZBOR" />
+
+                        <div class="mb-5">
+                            <div class="form-check form-switch p-3 rounded border border-2 border-dark shadow-sm bg-light">
+                                <input class="form-check-input ms-0 me-3" type="checkbox" id="kodPitanjeSwitch" style="cursor: pointer; transform: scale(1.3);">
+                                <label class="form-check-label fw-bold text-dark" for="kodPitanjeSwitch" style="cursor: pointer;">Ovo je pitanje sa KODOM</label>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-5">
+                                <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Nivo težine</label>
+                                <select name="NivoId" class="form-select form-select-lg border-2 border-dark shadow-sm" style="border-radius: 8px;" required>
+                                    <option value="">-- Izaberi nivo --</option>
+                                    @if (ViewBag.Nivoi != null)
+                                    {
+                                        foreach (var n in (IEnumerable<Nivo>)ViewBag.Nivoi)
+                                        {
+                                            <option value="@n.NivoId">@n.NazivNivoa</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-5">
+                                <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Autor (Kreator)</label>
+
+                                @if (User.IsInRole("Profesor"))
+                                {
+                                    <select class="form-select form-select-lg border-2 border-dark shadow-sm" style="border-radius: 8px;" disabled>
+                                        @if (ViewBag.Korisnici != null)
+                                        {
+                                            foreach (var k in (IEnumerable<SharpMind.Models.Korisnik>)ViewBag.Korisnici)
+                                            {
+                                                if (k.KorisnikIme == User.Identity?.Name)
+                                                {
+                                                    <option value="@k.KorisnikId" selected>@k.KorisnikIme</option>
+                                                }
+                                            }
+                                        }
+                                    </select>
+                                    foreach (var k in (IEnumerable<SharpMind.Models.Korisnik>)ViewBag.Korisnici)
+                                    {
+                                        if (k.KorisnikIme == User.Identity?.Name)
+                                        {
+                                            <input type="hidden" name="KorisnikId" value="@k.KorisnikId" />
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    <select name="KorisnikId" class="form-select form-select-lg border-2 border-dark shadow-sm" style="border-radius: 8px;" required>
+                                        <option value="">-- Izaberi autora --</option>
+                                        @if (ViewBag.Korisnici != null)
+                                        {
+                                            foreach (var k in (IEnumerable<SharpMind.Models.Korisnik>)ViewBag.Korisnici)
+                                            {
+                                                if (k.Uloga?.UlogaNaziv == "Admin" || k.Uloga?.UlogaNaziv == "Profesor")
+                                                {
+                                                    <option value="@k.KorisnikId" selected="@(k.KorisnikIme == User.Identity?.Name)">@k.KorisnikIme</option>
+                                                }
+                                            }
+                                        }
+                                    </select>
+                                }
+                            </div>
+
+                        <div class="mb-5">
+                            <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Blok koda</label>
+                            <textarea name="BlokKod" id="blokKodTextArea" class="form-control font-monospace border-2 border-dark bg-light"
+                                      rows="8" style="border-radius: 8px; font-size: 0.95rem;" disabled></textarea>
+                        </div>
+
+                        <div class="d-grid gap-3 mt-4">
+                            <button type="submit" class="btn text-dark fw-bold py-3 shadow text-uppercase" style="background-color:@sivaBoja; border-radius: 8px;">
+                                <i class="bi bi-check-lg me-2"></i> Sačuvaj pitanje
+                            </button>
+
+                            <a href="/Pitanja/Objedinjeno" class="btn btn-dark fw-bold py-3 shadow text-uppercase" style="border-radius: 8px;">
+                                <i class="bi bi-x-circle me-2"></i> Odustani
+                            </a>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fw-black {
+        font-weight: 900 !important;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: @sivaBoja !important;
+        box-shadow: 0 0 0 0.25rem rgba(197, 200, 193, 0.2) !important;
+    }
+</style>
+
+<script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const kodSwitch = document.getElementById("kodPitanjeSwitch");
+            const tipSkriveno = document.getElementById("pitanjeTipSkriveno");
+            const kodTextArea = document.getElementById("blokKodTextArea");
+
+            const csharpSablon = `using System;
+
+    public class Program
+    {
+        public static void Main()
+        {
+
+        }
+    }`;
+
+            kodSwitch.addEventListener("change", function () {
+                if (this.checked) {
+                    tipSkriveno.value = "KOD";
+                    kodTextArea.disabled = false;
+                    kodTextArea.value = csharpSablon;
+                    kodTextArea.classList.remove("bg-light");
+                } else {
+                    tipSkriveno.value = "VISESTRUKI_IZBOR";
+                    kodTextArea.disabled = true;
+                    kodTextArea.value = "";
+                    kodTextArea.classList.add("bg-light");
+                }
+            });
+        });
+</script>

@@ -1,0 +1,67 @@
+﻿@model SharpMind.Models.Pitanje
+@{
+    ViewData["Title"] = "Izmena pitanja";
+    string bojaModela = "#DC143C";
+}
+
+<div class="container mt-5">
+    <div class="col-md-8 mx-auto">
+        <div class="card shadow border-2 border-dark">
+            <div class="card-header text-white text-center fw-bold text-uppercase" style="background-color:@bojaModela;">
+                Izmena pitanja #@Model.PitanjeId
+            </div>
+
+            <div class="card-body">
+                <form asp-controller="Pitanja" asp-action="IzmenaPitanja" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="PitanjeId" value="@Model.PitanjeId" />
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-uppercase">Tekst pitanja</label>
+                        <textarea name="PitanjeTekst" class="form-control border-2 border-dark shadow-sm" rows="3" required>@Model.PitanjeTekst</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-uppercase">Tip pitanja</label>
+                        <select name="PitanjeTip" class="form-select border-2 border-dark shadow-sm">
+                            <option value="VISESTRUKI_IZBOR" selected="@(Model.PitanjeTip == "VISESTRUKI_IZBOR")">Višestruki izbor</option>
+                            <option value="KOD" selected="@(Model.PitanjeTip == "KOD")">Kod</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-uppercase">Nivo</label>
+                        <select name="NivoId" class="form-select border-2 border-dark shadow-sm">
+                            @foreach (var n in ViewBag.Nivoi)
+                            {
+                                <option value="@n.NivoId" selected="@(Model.NivoId == n.NivoId)">@n.NazivNivoa</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-uppercase">Kreator</label>
+                        <select name="KorisnikId" class="form-select border-2 border-dark shadow-sm">
+                            @foreach (var k in ViewBag.Korisnici)
+                            {
+                                <option value="@k.KorisnikId" selected="@(Model.KorisnikId == k.KorisnikId)">@k.KorisnikIme</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-uppercase">Blok koda</label>
+                        <textarea name="BlokKod" class="form-control font-monospace border-2 border-dark bg-light" rows="5">@Model.BlokKod</textarea>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn text-white fw-bold px-4 border-2 border-dark" style="background-color:@bojaModela;">
+                            Sačuvaj izmene
+                        </button>
+                        <a href="/Pitanja/Objedinjeno" class="btn btn-outline-dark border-2 px-4">Odustani</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

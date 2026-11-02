@@ -1,0 +1,179 @@
+﻿@model IEnumerable<SharpMind.Models.Uloga>
+
+@{
+    ViewData["Title"] = "Uloge korisnika";
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+    int pageSize = ViewBag.CurrentPageSize ?? 25;
+    int totalItems = ViewBag.TotalItems ?? 0;
+    string currentSort = ViewBag.CurrentSort ?? "id_desc";
+    string bojaModela = "#191970";
+
+    int startItem = totalItems == 0 ? 0 : ((currentPage - 1) * pageSize) + 1;
+    int endItem = Math.Min(startItem + Model.Count() - 1, totalItems);
+}
+
+<style>
+    .uloga-theme {
+        background-color: @bojaModela !important;
+        color: white !important;
+        border: 1px solid @bojaModela !important;
+    }
+
+    .table-uloga-header th {
+        background-color: @bojaModela !important;
+        color: white !important;
+        border: none !important;
+    }
+
+    .uloga-text {
+        color: @bojaModela !important;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(25, 25, 112, 0.08);
+    }
+
+    .page-item.active .page-link {
+        background-color: @bojaModela !important;
+        border-color: @bojaModela !important;
+        color: white !important;
+    }
+
+    .page-link {
+        color: @bojaModela;
+        font-weight: bold;
+    }
+</style>
+
+<div class="container-fluid mt-4">
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark"><i class="bi bi-file-person uloga-text"></i> Uloge korisnika</h2>
+            <p class="text-muted mb-0">
+                Prikazano <span class="fw-bold text-dark">@startItem - @endItem</span>
+                od ukupno <span class="fw-bold text-dark">@totalItems</span> uloga |
+                Stranica <span class="fw-bold text-dark">@currentPage</span> od @totalPages
+            </p>
+        </div>
+
+        <div class="d-flex gap-3 align-items-center">
+            <div class="d-flex align-items-center bg-white border rounded px-2 shadow-sm">
+                <label class="me-2 small fw-bold text-muted text-nowrap">Prikaži:</label>
+                <select id="pageSizeSelect" class="form-select form-select-sm border-0" onchange="changePageSize()">
+                    <option value="25" selected="@(pageSize == 25)">25</option>
+                    <option value="50" selected="@(pageSize == 50)">50</option>
+                </select>
+            </div>
+
+            <a href="/Uloge/Create" class="btn shadow-sm px-4 uloga-theme">
+                <i class="bi bi-plus-circle"></i> Dodaj novu ulogu
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow border-0" style="border-radius: 12px; overflow: hidden;">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-uloga-header">
+                        <tr>
+                            <th class="ps-4" style="width:150px;">
+                                <a href="@Url.Action("Index", new { sortOrder = ViewBag.IdSortParm, pageSize = pageSize, page = 1 })"
+                                   class="text-decoration-none text-white d-flex align-items-center">
+                                    ID
+                                    <i class="bi @(currentSort == "id_asc" ? "bi-sort-numeric-up" : "bi-sort-numeric-down-alt") ms-1"></i>
+                                </a>
+                            </th>
+                            <th>Naziv Uloge</th>
+                            <th class="text-end pe-4">Akcije</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="ps-4">
+                                    <span class="badge bg-light text-muted border">#@item.UlogaId</span>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-dark">
+                                        @item.UlogaNaziv
+                                    </span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="btn-group shadow-sm">
+                                        <a href="/Uloge/Details/@item.UlogaId" class="btn btn-sm btn-outline-secondary" title="Detalji">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="/Uloge/Edit/@item.UlogaId" class="btn btn-sm btn-outline-primary" title="Izmeni">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+
+                                        <form action="@Url.Action("Delete", "Uloge", new { id = item.UlogaId })" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-outline-danger"
+                                                    style="border-top-left-radius: 0; border-bottom-left-radius: 0;"
+                                                    title="Obriši"
+                                                    onclick="return confirm('Da li ste sigurni da želite da obrišete ulogu: @item.UlogaNaziv?')">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        @if (totalPages > 1)
+        {
+            <div class="card-footer bg-white py-3 border-top">
+                <nav>
+                    <ul class="pagination justify-content-center mb-0">
+                        <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                            <a class="page-link" href="?page=@(currentPage - 1)&pageSize=@pageSize&sortOrder=@currentSort">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+
+                        @for (int i = 1; i <= totalPages; i++)
+                        {
+                            <li class="page-item @(i == currentPage ? "active" : "")">
+                                <a class="page-link" href="?page=@i&pageSize=@pageSize&sortOrder=@currentSort">@i</a>
+                            </li>
+                        }
+
+                        <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                            <a class="page-link" href="?page=@(currentPage + 1)&pageSize=@pageSize&sortOrder=@currentSort">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function changePageSize() {
+            const size = document.getElementById("pageSizeSelect").value;
+            window.location.href = `/Uloge/Index?page=1&pageSize=${size}&sortOrder=@currentSort`;
+        }
+    </script>
+}

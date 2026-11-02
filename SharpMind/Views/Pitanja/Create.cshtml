@@ -1,0 +1,103 @@
+﻿@using SharpMind.Models
+@model SharpMind.Models.Pitanje
+@{
+    ViewData["Title"] = "Novo pitanje";
+    string sivaBoja = "#c5c8c1";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg border border-2 border-dark" style="border-radius: 15px; overflow: hidden;">
+
+                <div class="card-header py-3 text-center border-bottom border-2 border-dark" style="background-color:@sivaBoja;">
+                    <h5 class="mb-0 fw-bold text-dark text-uppercase">
+                        <i class="bi bi-plus-circle-dotted me-2"></i> Novo Pitanje
+                    </h5>
+                </div>
+
+                <div class="card-body p-5 bg-white">
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-4">
+                            <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Tekst pitanja</label>
+                            <textarea name="PitanjeTekst"
+                                      class="form-control form-control-lg border-2 border-dark shadow-sm"
+                                      rows="3" style="border-radius: 8px;"
+                                      required></textarea>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Tip pitanja</label>
+                                <select name="PitanjeTip" class="form-select form-select-lg border-2 border-dark shadow-sm" style="border-radius: 8px;" required>
+                                    <option value="">-- Izaberi tip --</option>
+                                    <option value="VISESTRUKI_IZBOR">Višestruki izbor</option>
+                                    <option value="KOD">Kod</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Nivo težine</label>
+                                <select name="NivoId" class="form-select form-select-lg border-2 border-dark shadow-sm" style="border-radius: 8px;" required>
+                                    <option value="">-- Izaberi nivo --</option>
+                                    @if (ViewBag.Nivoi != null)
+                                    {
+                                        @foreach (var n in (IEnumerable<Nivo>)ViewBag.Nivoi)
+                                        {
+                                            <option value="@n.NivoId">@n.NazivNivoa</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Autor (Kreator)</label>
+                            <select name="KorisnikId" class="form-select form-select-lg border-2 border-dark shadow-sm" style="border-radius: 8px;" required>
+                                <option value="">-- Izaberi autora --</option>
+                                @if (ViewBag.Korisnici != null)
+                                {
+                                    @foreach (var k in (IEnumerable<SharpMind.Models.Korisnik>)ViewBag.Korisnici)
+                                    {
+                                        <option value="@k.KorisnikId">@k.KorisnikIme</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+
+                        <div class="mb-5">
+                            <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Blok koda (opciono)</label>
+                            <textarea name="BlokKod"
+                                      class="form-control font-monospace border-2 border-dark bg-light"
+                                      rows="5" style="border-radius: 8px; font-size: 0.95rem;"></textarea>
+                        </div>
+
+                        <div class="d-grid gap-3 mt-4">
+                            <button type="submit" class="btn text-dark fw-bold py-3 shadow text-uppercase" style="background-color:@sivaBoja; border-radius: 8px;">
+                                <i class="bi bi-check-lg me-2"></i> Sačuvaj pitanje
+                            </button>
+
+                            <a href="/Pitanja/Index" class="btn btn-dark fw-bold py-3 shadow text-uppercase" style="border-radius: 8px;">
+                                <i class="bi bi-x-circle me-2"></i> Odustani
+                            </a>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fw-black {
+        font-weight: 900 !important;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: @sivaBoja !important;
+        box-shadow: 0 0 0 0.25rem rgba(197, 200, 193, 0.2) !important;
+    }
+</style>

@@ -1,0 +1,96 @@
+﻿@model SharpMind.Models.Odgovor
+@{
+    ViewData["Title"] = "Izmena odgovora";
+    string crimson = "#DC143C";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg border border-2 border-dark" style="border-radius: 15px; overflow: hidden;">
+
+                <div class="card-header text-white py-3 text-center border-bottom border-2 border-dark" style="background-color:@crimson;">
+                    <h5 class="mb-0 fw-bold text-uppercase">
+                        <i class="bi bi-pencil-square me-2"></i> Izmeni Odgovor
+                    </h5>
+                </div>
+
+                <div class="card-body p-5 bg-white">
+                    <form method="post">
+                        @Html.AntiForgeryToken()
+
+                        <input type="hidden" name="OdgovorId" value="@Model.OdgovorId" />
+
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div class="alert alert-danger border-2 border-danger shadow-sm mb-4" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                <strong>Snimanje nije uspelo:</strong>
+                                <div asp-validation-summary="All" class="small mt-1 text-danger list-unstyled"></div>
+                            </div>
+                        }
+
+                        <div class="mb-5 text-center">
+                            <div class="badge bg-dark px-3 py-2 shadow-sm border border-1 border-white">
+                                <span class="text-uppercase small fw-bold">Trenutni ID:</span> #@Model.OdgovorId
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Pitanje</label>
+                            <select name="PitanjeId" class="form-select form-select-lg border-2 border-dark shadow-sm" required style="border-radius: 8px;">
+                                @if (ViewBag.Pitanja != null)
+                                {
+                                    foreach (var p in ViewBag.Pitanja)
+                                    {
+                                        <option value="@p.PitanjeId" selected="@(p.PitanjeId == Model.PitanjeId)">@p.PitanjeTekst</option>
+                                    }
+                                }
+                                else
+                                {
+                                    <option value="@Model.PitanjeId">@Model.Pitanje?.PitanjeTekst</option>
+                                }
+                            </select>
+                            <span asp-validation-for="PitanjeId" class="text-danger small fw-bold mt-1 d-block"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Tekst odgovora</label>
+                            <textarea name="OdgovorTekst" class="form-control form-control-lg border-2 border-dark shadow-sm" rows="3" required style="border-radius: 8px;">@Model.OdgovorTekst</textarea>
+                            <span asp-validation-for="OdgovorTekst" class="text-danger small fw-bold mt-1 d-block"></span>
+                        </div>
+
+                        <div class="mb-5">
+                            <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Tačnost</label>
+                            <select name="OdgovorTacnost" class="form-select form-select-lg border-2 border-dark shadow-sm fw-bold" style="border-radius: 8px;">
+                                <option value="true" selected="@(Model.OdgovorTacnost == true)">✅ Tačan odgovor</option>
+                                <option value="false" selected="@(Model.OdgovorTacnost == false)">❌ Netačan odgovor</option>
+                            </select>
+                        </div>
+
+                        <div class="d-grid gap-3">
+                            <button type="submit" class="btn text-white fw-bold py-3 shadow text-uppercase" style="background-color:@crimson; border-radius: 8px;">
+                                <i class="bi bi-check-lg me-2"></i> Sačuvaj izmene
+                            </button>
+
+                            <a href="/Odgovori/Index" class="btn btn-dark fw-bold py-3 shadow text-uppercase" style="border-radius: 8px;">
+                                <i class="bi bi-arrow-left me-2"></i> Odustani
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fw-black {
+        font-weight: 900 !important;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: @crimson !important;
+        box-shadow: 0 0 0 0.25rem rgba(220, 20, 60, 0.15) !important;
+    }
+</style>

@@ -1,0 +1,46 @@
+﻿@{
+    Layout = null; 
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Prijava - SharpMind</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f4f4; display: flex; align-items: center; justify-content: center; height: 100vh; }
+        .card { width: 400px; border-top: 5px solid #8fb997; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .btn-custom { background-color: #8fb997; color: white; border: none; width: 100%; }
+        .btn-custom:hover { background-color: #7aa582; color: white; }
+        .form-control:focus { border-color: #8fb997; box-shadow: 0 0 0 0.25rem rgba(143, 185, 151, 0.25); }
+    </style>
+</head>
+<body>
+    <div class="card p-4 bg-white">
+        <h3 class="text-center mb-4" style="color: #2c3e50;">SharpMind Prijava</h3>
+
+        @if (ViewBag.Error != null)
+        {
+            <div class="alert alert-danger">@ViewBag.Error</div>
+        }
+
+        <form method="post" action="/Account/Login">
+            <div class="mb-3">
+                <label>Korisničko ime</label>
+                <input type="text" name="username" class="form-control" required />
+            </div>
+            <div class="mb-3">
+                <label>Lozinka</label>
+                <input type="password" name="password" class="form-control" required />
+            </div>
+            <button type="submit" class="btn btn-custom py-2">Prijavi se</button>
+        </form>
+        <div class="text-center mt-3">
+            <a href="/Home/Index" class="btn btn-link text-muted small">Nastavi kao gost</a>
+        </div>
+        <div class="text-center mt-3">
+            <a href="/Account/Register" style="color: #8fb997;">Nemaš nalog? Registruj se</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,77 @@
+﻿@model SharpMind.Models.Potpoglavlje
+@{
+    string boja = "#2E8B57"; 
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+
+            <div class="card shadow-lg border-2 border-dark" style="border-radius: 15px; overflow: hidden;">
+
+                <div class="card-header text-white py-3 text-center border-bottom border-2 border-dark" style="background-color:@boja;">
+                    <h5 class="fw-bolder mb-0 text-uppercase">
+                        <i class="bi bi-card-checklist me-2"></i> Informacije o Potpoglavlju
+                    </h5>
+                </div>
+
+                <div class="card-body p-5 text-center bg-white">
+
+                    <div class="mb-5">
+                        <i class="bi bi-card-checklist display-3" style="color:@boja;"></i>
+                    </div>
+
+                    <ul class="list-group border-2 border-dark rounded-3 shadow-sm">
+
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-4 border-bottom border-2 border-dark bg-white custom-hover">
+                            <span class="text-dark fw-black text-uppercase small">ID Potpoglavlja:</span>
+                            <span class="fw-bold fs-5" style="color:@boja;">#@Model.PotpoglavljeId</span>
+                        </li>
+
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-4 border-bottom border-2 border-dark bg-white custom-hover">
+                            <span class="text-dark fw-black text-uppercase small">Naziv:</span>
+                            <span class="fw-bold fs-5" style="color:@boja;">@Model.NazivPotpoglavlja</span>
+                        </li>
+
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-4 border-0 bg-white custom-hover">
+                            <span class="text-dark fw-black text-uppercase small">Pripada Poglavlju:</span>
+                            <span class="fw-bold fs-5 text-end ms-3" style="color:@boja;">
+                                @(Model.Poglavlje?.PoglavljeNaziv ?? "Nema poglavlja")
+                            </span>
+                        </li>
+                    </ul>
+
+                    <div class="d-grid gap-3 mt-5">
+                        <a href="/Potpoglavlja/Edit/@Model.PotpoglavljeId"
+                           class="btn text-white fw-bold py-3 shadow text-uppercase"
+                           style="background-color:@boja; border-radius: 8px;">
+                            <i class="bi bi-pencil-square me-2"></i> Izmeni Potpoglavlje
+                        </a>
+
+                        <a href="/Potpoglavlja/Index" class="btn btn-dark fw-bold py-3 shadow text-uppercase" style="border-radius: 8px;">
+                            <i class="bi bi-arrow-left me-2"></i> Nazad na listu
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fw-black {
+        font-weight: 900 !important;
+    }
+
+    .custom-hover {
+        transition: all 0.2s ease-in-out;
+        cursor: pointer;
+    }
+
+        .custom-hover:hover {
+            background-color: #f1f8f4 !important; 
+            transform: scale(1.02);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            z-index: 5;
+        }
+</style>

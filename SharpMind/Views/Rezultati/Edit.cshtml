@@ -1,0 +1,148 @@
+﻿@model SharpMind.Models.Rezultat
+@{
+    ViewData["Title"] = "Izmena rezultata";
+    string bojaModela = "#DAA520";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg border border-2 border-dark" style="border-radius: 15px; overflow: hidden;">
+
+                <div class="card-header text-white py-3 text-center border-bottom border-2 border-dark" style="background-color:@bojaModela;">
+                    <h5 class="mb-0 fw-bold text-uppercase">
+                        <i class="bi bi-pencil-square me-2"></i> Izmeni Rezultat
+                    </h5>
+                </div>
+
+                <div class="card-body p-5 bg-white">
+                    <form asp-controller="Rezultati" asp-action="Edit" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div asp-validation-summary="ModelOnly" class="text-danger fw-bold small mb-4"></div>
+
+                        <input type="hidden" name="RezultatId" value="@Model.RezultatId" />
+
+                        <div class="mb-5 text-center">
+                            <div class="badge bg-dark px-3 py-2 shadow-sm border border-1 border-white">
+                                <span class="text-uppercase small fw-bold">Trenutni ID:</span> #@Model.RezultatId
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Korisnik</label>
+                            <select name="KorisnikId" class="form-select form-select-lg border-2 border-dark shadow-sm" style="border-radius: 8px;">
+                                @if (ViewBag.Korisnici != null)
+                                {
+                                    foreach (var k in ViewBag.Korisnici)
+                                    {
+                                        <option value="@k.KorisnikId" selected="@(Model.KorisnikId == k.KorisnikId)">
+                                            @k.KorisnikIme
+                                        </option>
+                                    }
+                                }
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Nivo</label>
+                            <select name="NivoId" class="form-select form-select-lg border-2 border-dark shadow-sm" style="border-radius: 8px;">
+                                @if (ViewBag.Nivoi != null)
+                                {
+                                    foreach (var n in ViewBag.Nivoi)
+                                    {
+                                        <option value="@n.NivoId" selected="@(Model.NivoId == n.NivoId)">
+                                            @n.NazivNivoa
+                                        </option>
+                                    }
+                                }
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Tip aktivnosti</label>
+                            <select name="TipAktivnosti" class="form-select form-select-lg border-2 border-dark shadow-sm" style="border-radius: 8px;">
+                                <option value="TEST" selected="@(Model.TipAktivnosti == "TEST")">TEST</option>
+                                <option value="KVIZ" selected="@(Model.TipAktivnosti == "KVIZ")">KVIZ</option>
+                            </select>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Osvojeni poeni</label>
+                                <input name="OsvojeniPoeni" type="number"
+                                       value="@Model.OsvojeniPoeni"
+                                       class="form-control form-control-lg border-2 shadow-sm @(ViewData.ModelState["OsvojeniPoeni"]?.Errors.Count > 0 ? "border-danger is-invalid" : "border-dark")"
+                                       required
+                                       style="border-radius: 8px;" />
+
+                                @if (ViewData.ModelState["OsvojeniPoeni"]?.Errors.Count > 0)
+                                {
+                                    <div class="text-danger fw-bold small mt-2">
+                                        <i class="bi bi-exclamation-octagon-fill"></i>
+                                        @ViewData.ModelState["OsvojeniPoeni"].Errors[0].ErrorMessage
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Ukupno poena</label>
+                                <input name="UkupnoPoena" type="number"
+                                       value="@Model.UkupnoPoena"
+                                       class="form-control form-control-lg border-2 shadow-sm @(ViewData.ModelState["UkupnoPoena"]?.Errors.Count > 0 ? "border-danger is-invalid" : "border-dark")"
+                                       required
+                                       style="border-radius: 8px;" />
+
+                                @if (ViewData.ModelState["UkupnoPoena"]?.Errors.Count > 0)
+                                {
+                                    <div class="text-danger fw-bold small mt-2">
+                                        <i class="bi bi-exclamation-octagon-fill"></i>
+                                        @ViewData.ModelState["UkupnoPoena"].Errors[0].ErrorMessage
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="mb-5">
+                            <label class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Datum polaganja</label>
+                            <input name="DatumPolaganja" type="date"
+                                   class="form-control form-control-lg border-2 border-dark shadow-sm"
+                                   style="border-radius: 8px;"
+                                   value="@Model.DatumPolaganja.ToString("yyyy-MM-dd")" />
+                        </div>
+
+                        <div class="d-grid gap-3">
+                            <button type="submit" class="btn text-white fw-bold py-3 shadow text-uppercase" style="background-color:@bojaModela; border-radius: 8px;">
+                                <i class="bi bi-check-lg me-2"></i> Sačuvaj izmene
+                            </button>
+
+                            @if (User.IsInRole("Admin") || User.IsInRole("Profesor"))
+                            {
+                                <a href="/Rezultati/Index" class="btn btn-dark fw-bold py-3 shadow text-uppercase" style="border-radius: 8px;">
+                                    <i class="bi bi-arrow-left me-2"></i> Nazad na listu
+                                </a>
+                            }
+                            else
+                            {
+                                <a href="/Rezultati/Index" class="btn btn-dark fw-bold py-3 shadow text-uppercase" style="border-radius: 8px;">
+                                    <i class="bi bi-arrow-left me-2"></i> Nazad na početnu
+                                </a>
+                            }
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fw-black {
+        font-weight: 900 !important;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: @bojaModela !important;
+        box-shadow: 0 0 0 0.25rem rgba(218, 165, 32, 0.15) !important;
+    }
+</style>

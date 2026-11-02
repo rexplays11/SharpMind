@@ -1,0 +1,106 @@
+﻿@{
+    ViewData["Title"] = "Početna";
+    string plava = "#4169E1";
+}
+
+<div class="container mt-5">
+
+    <div class="row align-items-center p-5 mb-5 border border-3 border-dark shadow-lg bg-white" style="border-radius: 20px;">
+        <div class="col-lg-8 text-center text-lg-start">
+            <h1 class="display-3 fw-black text-dark text-uppercase mb-3">
+                Sharp<span style="color: @plava;">Mind</span>
+            </h1>
+            <p class="lead fs-4 text-muted mb-4">
+                Dobrodošli na vašu centralnu platformu za usavršavanje C# veština.
+                Svi materijali su organizovani u pregledne nastavne celine kroz interaktivni plan.
+            </p>
+            <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                <a href="/Lekcije/PregledLekcija" class="btn btn-lg text-white fw-bold px-5 py-3 shadow text-uppercase" style="background-color: @plava; border-radius: 10px; min-width: 280px;">
+                    <i class="bi bi-journal-bookmark-fill me-2"></i> Otvori Lekcije
+                </a>
+            </div>
+        </div>
+        <div class="col-lg-4 text-center d-none d-lg-block">
+            <i class="bi bi-terminal-fill" style="font-size: 10rem; color: @plava;"></i>
+        </div>
+    </div>
+
+
+    <div class="row g-4 text-center">
+        <div class="col-md-4">
+            <div class="card h-100 border-2 border-dark shadow hover-card" style="border-radius: 15px;">
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="mb-3">
+                        <i class="bi bi-clipboard-check-fill display-4" style="color: @plava;"></i>
+                    </div>
+                    <h4 class="fw-bold text-uppercase">Test</h4>
+                    <p class="text-muted flex-grow-1">Proveri svoje formalno znanje kroz struktuirane testove po poglavljima.</p>
+                    <a href="/Test" class="btn btn-dark fw-bold text-uppercase mt-3 w-100 py-2">Pristupi Testu</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 border-2 border-dark shadow hover-card" style="border-radius: 15px;">
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="mb-3">
+                        <i class="bi bi-controller display-4" style="color: @plava;"></i>
+                    </div>
+                    <h4 class="fw-bold text-uppercase">Kviz</h4>
+                    <p class="text-muted flex-grow-1">Brza provera znanja uz zabavne i dinamične kvizove za vežbu.</p>
+                    <a href="/Kviz" class="btn btn-dark fw-bold text-uppercase mt-3 w-100 py-2">Započni Kviz</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 border-2 border-dark shadow hover-card" style="border-radius: 15px;">
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="mb-3">
+                        <i class="bi bi-person-badge-fill display-4" style="color: @plava;"></i>
+                    </div>
+                    <h4 class="fw-bold text-uppercase">Profil</h4>
+                    <p class="text-muted flex-grow-1">Pregledaj svoje rezultate</p>
+                    <a href="/Korisnici/Profil" class="btn btn-dark fw-bold text-uppercase mt-3 w-100 py-2">Moj Nalog</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fw-black {
+        font-weight: 900 !important;
+    }
+
+    .hover-card {
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        background-color: white;
+    }
+
+        .hover-card:hover {
+            transform: translateY(-10px);
+            border-color: @plava !important;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15) !important;
+        }
+
+    body {
+        background-color: #f4f7f6;
+    }
+
+    .display-3 {
+        letter-spacing: -2px;
+    }
+
+    .btn-dark {
+        border-radius: 8px;
+        transition: 0.2s;
+        border: 2px solid transparent;
+    }
+
+        .btn-dark:hover {
+            background-color: transparent;
+            color: #212529;
+            border-color: #212529;
+        }
+</style>

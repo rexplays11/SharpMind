@@ -1,0 +1,102 @@
+﻿@model SharpMind.Models.Rezultat
+@{
+    string zlatnaBoja = "#DAA520";
+    double procenat = Model.UkupnoPoena > 0 ? (double)Model.OsvojeniPoeni / Model.UkupnoPoena * 100 : 0;
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+
+            <div class="card shadow-lg border-2 border-dark" style="border-radius: 15px; overflow: hidden;">
+
+                <div class="card-header py-3 text-center border-bottom border-2 border-dark" style="background-color:@zlatnaBoja;">
+                    <h5 class="fw-bolder mb-0 text-uppercase text-dark">
+                        <i class="bi bi-trophy me-2"></i> Informacije o Rezultatu
+                    </h5>
+                </div>
+
+                <div class="card-body p-5 text-center bg-white">
+
+                    <div class="mb-5">
+                        <i class="bi bi-trophy display-3" style="color:@zlatnaBoja;"></i>
+                        <h2 class="fw-black mt-3" style="color:@zlatnaBoja;">@Math.Round(procenat, 1)%</h2>
+                        <div class="progress border border-dark border-2 mx-auto" style="height: 12px; max-width: 80%;">
+                            <div class="progress-bar" role="progressbar"
+                                 style="width: @procenat%; background-color: @zlatnaBoja;"
+                                 aria-valuenow="@procenat" aria-valuemin="0" aria-valuemax="100">
+                            </div>
+                        </div>
+                    </div>
+
+                    <ul class="list-group border-2 border-dark rounded-3 shadow-sm mb-5">
+
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-4 border-bottom border-2 border-dark bg-white custom-hover">
+                            <span class="text-dark fw-black text-uppercase small">ID Rezultata:</span>
+                            <span class="fw-bold fs-5" style="color:@zlatnaBoja;">#@Model.RezultatId</span>
+                        </li>
+
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-4 border-bottom border-2 border-dark bg-white custom-hover">
+                            <span class="text-dark fw-black text-uppercase small">Student:</span>
+                            <span class="fw-bold fs-5" style="color:@zlatnaBoja;">@Model.Korisnik?.KorisnikIme</span>
+                        </li>
+
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-4 border-bottom border-2 border-dark bg-white custom-hover">
+                            <span class="text-dark fw-black text-uppercase small">Datum polaganja:</span>
+                            <span class="fw-bold fs-5" style="color:@zlatnaBoja;">@Model.DatumPolaganja.ToString("dd.MM.yyyy HH:mm")</span>
+                        </li>
+
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-4 border-bottom border-2 border-dark bg-white custom-hover">
+                            <span class="text-dark fw-black text-uppercase small">Tip Aktivnosti:</span>
+                            <span class="fw-bold fs-5 text-uppercase" style="color:@zlatnaBoja;">@Model.TipAktivnosti</span>
+                        </li>
+
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-4 border-bottom border-2 border-dark bg-white custom-hover">
+                            <span class="text-dark fw-black text-uppercase small">Nivo Težine:</span>
+                            <span class="fw-bold fs-5" style="color:@zlatnaBoja;">@(Model.Nivo?.NazivNivoa ?? "N/A")</span>
+                        </li>
+
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-4 border-0 bg-white custom-hover">
+                            <span class="text-dark fw-black text-uppercase small">Ostvareni Poeni:</span>
+                            <span class="fw-bold fs-5" style="color:@zlatnaBoja;">@Model.OsvojeniPoeni / @Model.UkupnoPoena</span>
+                        </li>
+                    </ul>
+
+                    <div class="d-grid gap-3">
+                        <a href="/Rezultati/Edit/@Model.RezultatId"
+                           class="btn text-dark fw-bold py-3 shadow border-2 border-dark text-uppercase"
+                           style="background-color:@zlatnaBoja; border-radius: 8px;">
+                            <i class="bi bi-pencil-square me-2"></i> Izmeni Rezultat
+                        </a>
+
+                        <a href="/Rezultati/Index" class="btn btn-dark fw-bold py-3 shadow text-uppercase" style="border-radius: 8px;">
+                            <i class="bi bi-arrow-left me-2"></i> Nazad na listu
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .fw-black {
+        font-weight: 900 !important;
+    }
+
+    .custom-hover {
+        transition: all 0.2s ease-in-out;
+        cursor: pointer;
+    }
+
+        .custom-hover:hover {
+            background-color: #fffbf2 !important; 
+            transform: scale(1.02);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            z-index: 5;
+        }
+
+    .progress-bar {
+        transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+</style>

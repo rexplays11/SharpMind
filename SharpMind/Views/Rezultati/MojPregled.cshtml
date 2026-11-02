@@ -1,0 +1,119 @@
+﻿@model IEnumerable<SharpMind.Models.Rezultat>
+
+@{
+    ViewData["Title"] = "Moji Rezultati";
+}
+
+<div class="container mt-5">
+    <div class="card shadow border-2 border-dark mb-4" style="border-radius: 12px;">
+        <div class="card-body d-flex justify-content-between align-items-center bg-light" style="border-radius: 10px;">
+            <div>
+                <h2 class="fw-black text-dark mb-0 text-uppercase">
+                    <i class="bi bi-journal-check text-primary me-2"></i>
+                    Pregled aktivnosti: <span class="text-primary">@ViewBag.KorisnikIme</span>
+                </h2>
+                <p class="text-muted mb-0">Istorija svih urađenih kvizova i testova po nivoima.</p>
+            </div>
+            <a href="/Korisnici/Profil" class="btn btn-dark fw-bold py-2 shadow text-uppercase" style="border-radius: 8px;">
+                <i class="bi bi-arrow-left-square-fill me-2"></i> Nazad na profil
+            </a>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-warning border-2 border-warning shadow text-center p-5">
+            <i class="bi bi-emoji-frown display-4 d-block mb-3"></i>
+            <h4 class="fw-bold">Nema zabeleženih aktivnosti.</h4>
+            <p>Izgleda da ovaj korisnik još uvek nije završio nijedan test ili kviz.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover border-2 border-dark shadow bg-white" style="border-radius: 12px; overflow: hidden;">
+                <thead class="table-dark text-uppercase small">
+                    <tr>
+                        <th class="py-3 ps-4">Tip Aktivnosti</th>
+                        <th class="py-3">Nivo</th>
+                        <th class="py-3 text-center">Datum</th>
+                        <th class="py-3 text-center">Poeni</th>
+                        <th class="py-3 text-center">Procenat</th>
+                        <th class="py-3 text-center">Uspeh</th>
+                    </tr>
+                </thead>
+                <tbody class="align-middle">
+                    @foreach (var r in Model)
+                    {
+                        double procenat = (double)r.OsvojeniPoeni / (r.UkupnoPoena > 0 ? r.UkupnoPoena : 1) * 100;
+                        bool jeTest = r.TipAktivnosti?.ToUpper() == "TEST";
+
+                        <tr>
+                            <td class="ps-4">
+                                @if (jeTest)
+                                {
+                                    <span class="badge bg-danger text-uppercase p-2 border border-dark">
+                                        <i class="bi bi-file-earmark-text-fill me-1"></i> TEST
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success text-uppercase p-2 border border-dark">
+                                        <i class="bi bi-lightning-fill me-1"></i> KVIZ
+                                    </span>
+                                }
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark">@r.Nivo?.NazivNivoa</div>
+                                <div class="small text-muted">ID: #@r.NivoId</div>
+                            </td>
+                            <td class="text-center text-muted">
+                                @r.DatumPolaganja.ToString("dd.MM.yyyy.")
+                            </td>
+                            <td class="text-center">
+                                <span class="fw-black h5 mb-0">@r.OsvojeniPoeni</span>
+                                <small class="text-muted">/ @r.UkupnoPoena</small>
+                            </td>
+                            <td class="text-center" style="width: 180px;">
+                                <div class="progress border border-dark" style="height: 10px; border-radius: 5px;">
+                                    <div class="progress-bar @(procenat >= 50 ? "bg-primary" : "bg-warning")"
+                                         style="width: @procenat.ToString("0")%"></div>
+                                </div>
+                                <small class="fw-bold">@procenat.ToString("0")%</small>
+                            </td>
+                            <td class="text-center">
+                                @if (procenat == 100)
+                                {
+                                    <i class="bi bi-star-fill text-warning h4" title="Izvanredno"></i>
+                                }
+                                else if (procenat >= 50)
+                                {
+                                    <i class="bi bi-check-circle-fill text-success h4" title="Položeno"></i>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-x-circle-fill text-danger h4" title="Pokušaj ponovo"></i>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<style>
+    .table {
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .fw-black {
+        font-weight: 900;
+    }
+
+    .table thead th {
+        border-bottom: 2px solid black;
+    }
+</style>
