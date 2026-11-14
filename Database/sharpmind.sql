@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 02, 2026 at 06:13 PM
+-- Generation Time: Nov 14, 2026 at 01:54 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -43,37 +43,13 @@ CREATE TABLE `korisnici` (
 --
 
 INSERT INTO `korisnici` (`korisnik_id`, `korisnicko_ime`, `lozinka`, `datum_registracije`, `uloga_id`, `nivoId`, `profesor_id`, `ukupno_poena`) VALUES
-(1, '12', '1', '2026-01-01', 1, 21, NULL, 1114),
-(10, '1223', '', '2026-02-08', 1, 5, NULL, 0),
-(15, 'awfaw13131', 'watawtawtaw', '2026-02-15', 1, 1, NULL, 0),
-(18, 'wawfwafwa', 'PImldPWAWp', '2026-03-12', 3, 1, NULL, 0),
-(26, 'awf', 'awffawafw', '2026-04-02', 1, 1, NULL, 0),
-(27, 'faw', 'wfawfafaw', '2026-04-02', 1, 1, NULL, 4),
-(28, '333333333333333', '333333333333333', '2026-04-02', 3, 3, NULL, 3),
-(29, 'wafwfa333333', '33333333', '2026-04-02', 1, 1, 26, 4),
-(46, 'Korisnik2', 'a1234', '2026-06-11', 2, 1, NULL, 0),
-(47, '2', '3', '2026-06-25', 3, 2, NULL, 131),
-(48, '3', '3', '2026-06-25', 2, 1, 48, 71),
-(49, '66', 'vnbdVihUwm', '2026-06-26', 2, 1, 46, 22),
-(68, '13', '1', '2026-06-26', 1, 1, 46, 4),
-(75, '25', '25252', '2026-06-26', 1, 1, NULL, 52),
-(95, 'wafwfafwaE', '242', '2026-06-26', 1, 1, 48, 0),
-(100, 'Profesor', '12345', '2026-07-30', 2, 1, NULL, 249),
-(103, 'Novi', '123', '2026-08-20', 2, 1, NULL, 0),
-(104, 'Dabar', '133113', '2026-08-07', 2, 5, NULL, 41414444),
-(105, '2ar2a', 'r2r2ara2', '2026-08-07', 2, 3, 75, 0),
-(108, '12131341', '1414141', '2026-10-08', 2, 5, 47, 4224),
-(110, '131', '1313131', '2026-11-10', 2, 2, 68, 13),
-(111, '3131', '3131', '2026-11-02', 2, 2, 48, 11),
-(113, 'wafaw', 'fawfwafaw', '2026-11-13', 2, 1, 49, 4242),
-(116, '11111', 'IsyLupSEdZ', '2026-11-02', 2, 1, NULL, 11),
-(117, '1234', '0JAmzuT#PH', '2026-11-02', 3, 1, NULL, 1),
-(118, '131315', 'NdW#zoldZj', '2026-11-02', 2, 1, 113, 33),
-(119, '1213141', '41414141', '2026-11-11', 1, 2, 95, 242),
-(120, '131313131', 'fwafwa', '2026-11-11', 2, 3, 113, 251),
-(121, '13114141', 'LIQI!xa1uW', '2026-11-02', 3, 1, NULL, 19),
-(125, '5', '5', '2026-11-02', 3, 1, 48, 7),
-(126, 'nikola2', '1234', '2026-11-02', 2, 1, NULL, 0);
+(1, '1', 'AQAAAAIAAYagAAAAEHEuuWACJ0EZzN7aDB+AyuottHIqefV6fRz1tXBsBbmcR1qcg2l869PnLdm8ixgPew==', '2026-01-01', 1, 21, NULL, 1114),
+(47, '2', 'AQAAAAIAAYagAAAAEHJYonYf8DSrE1M4a0kCMrvi49KiFhazeOJPD9dt3kwsr9aj40/Ay9KwP5UEyRPjaQ==', '2026-06-25', 2, 2, NULL, 131),
+(48, '3', 'AQAAAAIAAYagAAAAEFkYzfTMZ2ZHmoXzy8gwNdgus/2JCzKsGzHkaFDvoFsAwdjSatc5gGagYWGlDazpJw==', '2026-06-25', 2, 1, 134, 78),
+(132, '12345', 'AQAAAAIAAYagAAAAEKT+yv56N5rmfaoJVcHb/vj30mTaMaVqDMyjUAL9vJ05M44G+wKyyz1mNdGLdNg2cQ==', '2026-11-13', 3, 1, NULL, 0),
+(133, '11112', 'AQAAAAIAAYagAAAAEJeKs9VdibIDgxKX0HObxXaRD+FGUXIJIv0CRA+DQZ7Sj7/DaLJS/QK1ye0xpxOfaQ==', '2026-11-13', 3, 1, NULL, 0),
+(134, '44', 'AQAAAAIAAYagAAAAED63SSRsGdK9+fsYQZyPhFfp81CQ/j1R1bgQofqgqJpxuZsOuv1xhgpO+N1ZcDq7Mw==', '2026-11-13', 3, 1, NULL, 10),
+(136, 'fwafwa', 'AQAAAAIAAYagAAAAEEoyOGqxuuHY+DHcMhCMUQL6ABmrMwwvPDRv23EJuS+4spXYRYjFM6WtnBJE2ls/fA==', '2026-11-13', 2, 1, NULL, 2);
 
 -- --------------------------------------------------------
 
@@ -96,7 +72,7 @@ CREATE TABLE `kvizovi` (
 --
 
 INSERT INTO `kvizovi` (`kviz_id`, `kviz_naslov`, `korisnik_id`, `tip_kviza`, `vremensko_ogranicenje`, `broj_zivota`, `datum_kreiranja`) VALUES
-(25, '63636363', 1, 'vreme', 120, NULL, '2026-07-10 20:48:01');
+(25, '63636363', 1, 'zivoti', NULL, 5, '2026-07-10 20:48:01');
 
 -- --------------------------------------------------------
 
@@ -115,12 +91,13 @@ CREATE TABLE `kviz_pitanja` (
 --
 
 INSERT INTO `kviz_pitanja` (`kviz_pitanje_id`, `kviz_id`, `pitanje_id`) VALUES
-(137, 25, 3),
-(138, 25, 4),
-(139, 25, 5),
-(140, 25, 6),
-(141, 25, 8),
-(142, 25, 9);
+(223, 25, 2),
+(224, 25, 3),
+(225, 25, 4),
+(226, 25, 5),
+(227, 25, 6),
+(228, 25, 8),
+(229, 25, 9);
 
 -- --------------------------------------------------------
 
@@ -651,8 +628,7 @@ INSERT INTO `pitanja` (`pitanje_id`, `pitanje_tekst`, `pitanje_tip`, `nivo_id`, 
 (90, 'LINQ se može koristiti samo nad bazama podataka.', 'VISESTRUKI_IZBOR', 4, NULL, 1),
 (91, 'U LINQ-upit, ključna reč where se koristi za filtriranje elemenata.', 'VISESTRUKI_IZBOR', 4, NULL, 1),
 (92, 'Šta će ispisati sledeći kod?\r\n\r\nList<int> brojevi = new List<int> { 1, 2, 3, 4, 5, 6 };\r\nvar rezultat = brojevi.Where(n => n > 3);\r\n\r\nforeach(var x in rezultat)\r\n    Console.Write(x + \" \");', '', 4, NULL, 1),
-(93, 'Koja metoda sortira rezultate u LINQ-u?', 'VISESTRUKI_IZBOR', 4, NULL, 1),
-(142, 'awfawfawfaw3232', 'KOD', 5, 'wfafwafwafwafaw', 15);
+(93, 'Koja metoda sortira rezultate u LINQ-u?', 'VISESTRUKI_IZBOR', 4, NULL, 1);
 
 -- --------------------------------------------------------
 
@@ -735,7 +711,6 @@ INSERT INTO `rezultati` (`rezultat_id`, `korisnik_id`, `nivo_id`, `tip_aktivnost
 (16, 1, 1, 'TEST', 0, 10, '2026-05-02 19:49:10'),
 (17, 1, 1, 'TEST', 8, 10, '2026-05-02 19:49:27'),
 (18, 1, 1, 'TEST', 8, 10, '2026-05-02 19:49:33'),
-(19, 95, 1, 'TEST', 7, 10, '2026-05-02 19:49:36'),
 (20, 1, 2, 'TEST', 0, 9, '2026-05-12 14:28:22'),
 (21, 1, 2, 'TEST', 7, 11, '2026-05-12 16:29:33'),
 (23, 1, 2, 'TEST', 7, 11, '2026-05-12 16:33:24'),
@@ -762,7 +737,6 @@ INSERT INTO `rezultati` (`rezultat_id`, `korisnik_id`, `nivo_id`, `tip_aktivnost
 (51, 1, NULL, 'KVIZ', 2, 5, '2026-07-01 17:35:07'),
 (52, 1, NULL, 'KVIZ', 2, 7, '2026-07-02 19:11:44'),
 (53, 48, 1, 'TEST', 7, 50, '2026-07-02 20:30:27'),
-(54, 27, 5, 'KVIZ', 1, 5, '2026-07-06 00:00:00'),
 (55, 48, 1, 'TEST', 5, 50, '2026-07-08 17:32:51'),
 (56, 48, NULL, 'KVIZ', 3, 9, '2026-07-08 17:33:32'),
 (57, 48, 1, 'TEST', 7, 50, '2026-07-09 14:14:02'),
@@ -775,17 +749,6 @@ INSERT INTO `rezultati` (`rezultat_id`, `korisnik_id`, `nivo_id`, `tip_aktivnost
 (64, 1, NULL, 'KVIZ', 3, 7, '2026-07-10 20:48:50'),
 (65, 1, NULL, 'KVIZ', 2, 7, '2026-07-10 20:48:55'),
 (66, 1, NULL, 'KVIZ', 2, 7, '2026-07-10 21:05:00'),
-(67, 100, 1, 'TEST', 7, 50, '2026-07-30 19:27:54'),
-(69, 100, 1, 'TEST', 5, 50, '2026-08-06 00:52:47'),
-(74, 100, 1, 'TEST', 2, 50, '2026-08-07 15:47:17'),
-(75, 100, 1, 'TEST', 25, 50, '2026-08-07 15:47:46'),
-(76, 100, 1, 'TEST', 10, 50, '2026-08-07 15:50:02'),
-(77, 100, 1, 'TEST', 10, 50, '2026-08-07 15:50:53'),
-(78, 100, 1, 'TEST', 0, 50, '2026-08-07 15:52:51'),
-(79, 100, 1, 'TEST', 0, 50, '2026-08-07 15:53:56'),
-(80, 100, 1, 'TEST', 0, 50, '2026-08-07 15:54:15'),
-(81, 103, NULL, 'KVIZ', 0, 9, '2026-08-20 23:36:02'),
-(82, 103, NULL, 'KVIZ', 3, 9, '2026-08-20 23:36:17'),
 (84, 47, 2, 'TEST', 30, 55, '2026-10-30 22:32:10'),
 (85, 1, 3, 'KVIZ', 1, 1, '2026-10-09 00:00:00'),
 (87, 1, NULL, 'KVIZ', 1, 6, '2026-11-02 00:15:10'),
@@ -797,7 +760,14 @@ INSERT INTO `rezultati` (`rezultat_id`, `korisnik_id`, `nivo_id`, `tip_aktivnost
 (94, 48, 1, 'TEST', 5, 50, '2026-11-02 17:53:41'),
 (95, 48, 1, 'TEST', 5, 50, '2026-11-02 17:55:16'),
 (96, 48, 1, 'TEST', 5, 50, '2026-11-02 17:55:28'),
-(97, 125, 1, 'TEST', 7, 50, '2026-11-02 17:55:53');
+(99, 134, 1, 'TEST', 5, 50, '2026-11-13 21:36:39'),
+(100, 134, 1, 'TEST', 5, 50, '2026-11-13 21:52:22'),
+(101, 48, NULL, 'KVIZ', 3, 7, '2026-11-13 21:57:56'),
+(102, 48, NULL, 'KVIZ', 1, 6, '2026-11-13 21:58:31'),
+(103, 48, NULL, 'KVIZ', 4, 10, '2026-11-13 21:58:44'),
+(104, 48, 1, 'TEST', 7, 50, '2026-11-13 22:02:12'),
+(105, 134, NULL, 'KVIZ', 3, 7, '2026-11-14 00:17:58'),
+(106, 134, NULL, 'KVIZ', 3, 7, '2026-11-14 00:18:06');
 
 -- --------------------------------------------------------
 
@@ -913,25 +883,25 @@ ALTER TABLE `uloge`
 -- AUTO_INCREMENT for table `korisnici`
 --
 ALTER TABLE `korisnici`
-  MODIFY `korisnik_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=127;
+  MODIFY `korisnik_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=137;
 
 --
 -- AUTO_INCREMENT for table `kvizovi`
 --
 ALTER TABLE `kvizovi`
-  MODIFY `kviz_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
+  MODIFY `kviz_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
 -- AUTO_INCREMENT for table `kviz_pitanja`
 --
 ALTER TABLE `kviz_pitanja`
-  MODIFY `kviz_pitanje_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=193;
+  MODIFY `kviz_pitanje_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=230;
 
 --
 -- AUTO_INCREMENT for table `lekcija`
 --
 ALTER TABLE `lekcija`
-  MODIFY `lekcija_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=70;
+  MODIFY `lekcija_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=72;
 
 --
 -- AUTO_INCREMENT for table `nivoi`
@@ -943,13 +913,13 @@ ALTER TABLE `nivoi`
 -- AUTO_INCREMENT for table `odgovori`
 --
 ALTER TABLE `odgovori`
-  MODIFY `odgovor_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=391;
+  MODIFY `odgovor_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=393;
 
 --
 -- AUTO_INCREMENT for table `pitanja`
 --
 ALTER TABLE `pitanja`
-  MODIFY `pitanje_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=144;
+  MODIFY `pitanje_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=146;
 
 --
 -- AUTO_INCREMENT for table `poglavlje`
@@ -967,7 +937,7 @@ ALTER TABLE `potpoglavlje`
 -- AUTO_INCREMENT for table `rezultati`
 --
 ALTER TABLE `rezultati`
-  MODIFY `rezultat_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=98;
+  MODIFY `rezultat_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=107;
 
 --
 -- AUTO_INCREMENT for table `uloge`
