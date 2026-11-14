@@ -13,17 +13,15 @@ using System.Threading.Tasks;
 
 namespace SharpMind.Controllers
 {
-
-    [AllowAnonymous]
+    [Authorize]
     public class KvizController : Controller
     {
-        private readonly SharpMindContext _context; 
-        private readonly HttpClient _httpClient;   
+        private readonly SharpMindContext _context;
+        private readonly HttpClient _httpClient;
 
         // JDoodle API servisa
         private const string CLIENT_ID = "6ee30e18a7dfc14cae57080f0c1f795e";
         private const string CLIENT_SECRET = "f9ab7f1b207b8bafd2f13bb7354504d400cb7d02156684bee606e776a39e265f";
-
 
         public KvizController(SharpMindContext context, HttpClient httpClient)
         {
@@ -31,20 +29,23 @@ namespace SharpMind.Controllers
             _httpClient = httpClient;
         }
 
+        private Korisnik GetTrenutniKorisnik()
+        {
+            return _context.Korisnici
+                .Include(k => k.Uloga)
+                .FirstOrDefault(k => k.KorisnikIme == User.Identity.Name);
+        }
 
-        [AllowAnonymous]
+        // INDEX
         public IActionResult Index()
         {
             try
             {
+                var trenutniKorisnik = GetTrenutniKorisnik();
+                if (trenutniKorisnik == null) return RedirectToAction("Login", "Account");
 
-                var trenutniKorisnik = _context.Korisnici
-                    .Include(k => k.Uloga)
-                    .FirstOrDefault(k => k.KorisnikIme == User.Identity.Name);
-
-                ViewBag.IsAdmin = trenutniKorisnik?.Uloga?.UlogaNaziv == "Admin";
-                ViewBag.TrenutniKorisnikId = trenutniKorisnik?.KorisnikId;
-
+                ViewBag.IsAdmin = trenutniKorisnik.Uloga?.UlogaNaziv == "Admin";
+                ViewBag.TrenutniKorisnikId = trenutniKorisnik.KorisnikId;
 
                 var kvizovi = _context.Kvizovi
                     .Include(k => k.Kreator)
@@ -60,21 +61,19 @@ namespace SharpMind.Controllers
             }
         }
 
-
-
-        [AllowAnonymous]
+   
         public IActionResult Igraj(int id)
         {
             try
             {
-
-                var trenutniKorisnik = _context.Korisnici
-                    .FirstOrDefault(k => k.KorisnikIme == User.Identity.Name);
-
-                ViewBag.TrenutniKorisnikId = trenutniKorisnik?.KorisnikId;
+                var trenutniKorisnik = GetTrenutniKorisnik();
+                if (trenutniKorisnik == null) return RedirectToAction("Login", "Account");
 
                 var kviz = _context.Kvizovi.Find(id);
-                return kviz == null ? NotFound() : View(kviz);
+                if (kviz == null) return NotFound();
+
+                ViewBag.TrenutniKorisnikId = trenutniKorisnik.KorisnikId;
+                return View(kviz);
             }
             catch (Exception)
             {
@@ -82,12 +81,14 @@ namespace SharpMind.Controllers
             }
         }
 
+
+        [HttpGet]
+     
         public IActionResult DajPitanjeIzKviza(int kvizId, string odgovorilaIds)
         {
             try
             {
                 var iskljuciIds = new List<int>();
-
                 if (!string.IsNullOrEmpty(odgovorilaIds))
                 {
                     foreach (var idStr in odgovorilaIds.Split(','))
@@ -118,7 +119,6 @@ namespace SharpMind.Controllers
                     .Select(o => new { o.OdgovorId, o.OdgovorTekst })
                     .ToList();
 
-
                 int brojTacnihOdgovora = _context.Odgovori.Count(o => o.PitanjeId == nasumicanId && o.OdgovorTacnost == true);
                 bool isMultiselect = brojTacnihOdgovora > 1;
 
@@ -127,7 +127,7 @@ namespace SharpMind.Controllers
                     pitanjeId = pitanje.PitanjeId,
                     tekst = pitanje.PitanjeTekst,
                     blokKod = pitanje.BlokKod,
-                    isMultiselect = isMultiselect, 
+                    isMultiselect = isMultiselect,
                     odgovori,
                     kraj = false
                 });
@@ -138,7 +138,6 @@ namespace SharpMind.Controllers
             }
         }
 
-
         [HttpPost]
         public IActionResult ProveriOdgovor(int pitanjeId, List<int> odgovorIds)
         {
@@ -146,12 +145,10 @@ namespace SharpMind.Controllers
             {
                 if (odgovorIds == null) odgovorIds = new List<int>();
 
-                // Izvlačimo sve ID-jeve tačnih odgovora za ovo pitanje iz baze
                 var tacniOdgovoriIzBaze = _context.Odgovori
                     .Where(o => o.PitanjeId == pitanjeId && o.OdgovorTacnost == true)
                     .Select(o => o.OdgovorId)
                     .ToList();
-
 
                 bool sveTacno = tacniOdgovoriIzBaze.Count == odgovorIds.Count && !tacniOdgovoriIzBaze.Except(odgovorIds).Any();
 
@@ -175,8 +172,6 @@ namespace SharpMind.Controllers
             }
         }
 
-
-        [AllowAnonymous]
         [HttpPost]
         public async Task<IActionResult> RunCode([FromBody] CodeRequest request)
         {
@@ -187,9 +182,8 @@ namespace SharpMind.Controllers
 
             try
             {
-
                 var response = await _httpClient.PostAsJsonAsync("https://api.jdoodle.com/v1/execute", payload);
-                response.EnsureSuccessStatusCode(); 
+                response.EnsureSuccessStatusCode();
 
                 var resultJson = await response.Content.ReadAsStringAsync();
                 using var doc = JsonDocument.Parse(resultJson);
@@ -215,8 +209,6 @@ namespace SharpMind.Controllers
             }
         }
 
-
-
         [HttpPost]
         public IActionResult SacuvajRezultat([FromBody] Rezultat rezultat, int kvizId)
         {
@@ -224,18 +216,17 @@ namespace SharpMind.Controllers
 
             try
             {
+                var trenutniKorisnik = GetTrenutniKorisnik();
+                if (trenutniKorisnik == null) return Unauthorized();
+
+
+                rezultat.KorisnikId = trenutniKorisnik.KorisnikId;
                 rezultat.DatumPolaganja = DateTime.Now;
 
-                if (rezultat.TipAktivnosti?.ToUpper() == "TEST")
-                {
- 
-                }
-                else if (rezultat.TipAktivnosti?.ToUpper() == "KVIZ")
+                if (rezultat.TipAktivnosti?.ToUpper() == "KVIZ")
                 {
                     rezultat.NivoId = null;
-
                     int brojPitanjaUKvizu = _context.KvizPitanja.Count(kp => kp.KvizId == kvizId);
-
                     rezultat.UkupnoPoena = brojPitanjaUKvizu;
                 }
 
@@ -246,27 +237,19 @@ namespace SharpMind.Controllers
             }
             catch (Exception ex)
             {
-   
                 var porukaGreske = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
                 return StatusCode(500, new { success = false, message = "Sistemska greška: " + porukaGreske });
             }
         }
 
-
-
         // GET: Kviz/Create
-
+        [Authorize(Roles = "Admin, Profesor")]
         public IActionResult Create()
         {
             try
             {
-                PopuniListe(); 
-
-                var trenutni = _context.Korisnici
-                    .Include(k => k.Uloga)
-                    .FirstOrDefault(k => k.KorisnikIme == User.Identity.Name);
-
-                ViewBag.TrenutniKorisnik = trenutni;
+                PopuniListe();
+                ViewBag.TrenutniKorisnik = GetTrenutniKorisnik();
             }
             catch (Exception)
             {
@@ -276,16 +259,18 @@ namespace SharpMind.Controllers
         }
 
         // POST: Kviz/Create
-
-        [HttpPost, ValidateAntiForgeryToken] 
+        [Authorize(Roles = "Admin, Profesor")]
+        [HttpPost, ValidateAntiForgeryToken]
         public IActionResult Create(Kviz kviz, List<int> izabranaPitanja)
         {
+            var trenutniKorisnik = GetTrenutniKorisnik();
+            if (trenutniKorisnik == null) return RedirectToAction("Login", "Account");
+
             int izabranoBroj = izabranaPitanja?.Count ?? 0;
-            //  Kviz mora imati najmanje 5 izabranih pitanja
             if (izabranoBroj < 5)
             {
                 int faliJos = 5 - izabranoBroj;
-                string recPitanje = faliJos == 1 ? "pitanje" : (faliJos >= 2 && faliJos <= 4) ? "pitanja" : "pitanja";
+                string recPitanje = faliJos == 1 ? "pitanje" : "pitanja";
                 ModelState.AddModelError("", $"Nedovoljan broj pitanja za kreiranje kviza. Izabrali ste {izabranoBroj}, potrebno je da izaberete još {faliJos} {recPitanje}.");
             }
 
@@ -295,33 +280,24 @@ namespace SharpMind.Controllers
                 ModelState.AddModelError("KvizNaslov", "Kviz sa ovim naslovom već postoji. Izaberite drugi naslov.");
             }
 
-            var trenutniKorisnik = _context.Korisnici
-                .Include(k => k.Uloga)
-                .FirstOrDefault(k => k.KorisnikIme == User.Identity.Name);
 
-            if (trenutniKorisnik != null && trenutniKorisnik.Uloga != null)
+            if (trenutniKorisnik.Uloga?.UlogaNaziv == "Profesor")
             {
-                if (trenutniKorisnik.Uloga.UlogaNaziv == "Profesor")
-                {
-                    kviz.KorisnikId = trenutniKorisnik.KorisnikId;
-                }
-                else if (trenutniKorisnik.Uloga.UlogaNaziv == "Admin" && kviz.KorisnikId == 0)
-                {
-
-                    kviz.KorisnikId = trenutniKorisnik.KorisnikId;
-                }
+                kviz.KorisnikId = trenutniKorisnik.KorisnikId;
+            }
+            else if (trenutniKorisnik.Uloga?.UlogaNaziv == "Admin" && kviz.KorisnikId == 0)
+            {
+                kviz.KorisnikId = trenutniKorisnik.KorisnikId;
             }
 
-            try { ValidirajKviz(kviz); } catch { } 
+            try { ValidirajKviz(kviz); } catch { }
 
             if (ModelState.IsValid)
             {
                 try
                 {
-
                     _context.Kvizovi.Add(kviz);
                     _context.SaveChanges();
-
 
                     if (izabranaPitanja != null && izabranaPitanja.Count > 0)
                     {
@@ -344,7 +320,8 @@ namespace SharpMind.Controllers
             return View(kviz);
         }
 
-
+        // GET: Kviz/Edit/5 
+        [Authorize(Roles = "Admin, Profesor")]
         public IActionResult Edit(int id)
         {
             try
@@ -352,15 +329,12 @@ namespace SharpMind.Controllers
                 var kviz = _context.Kvizovi.Include(k => k.KvizPitanja).FirstOrDefault(k => k.KvizId == id);
                 if (kviz == null) return NotFound();
 
-                var trenutniKorisnik = _context.Korisnici
-                    .Include(k => k.Uloga)
-                    .FirstOrDefault(k => k.KorisnikIme == User.Identity.Name);
-
+                var trenutniKorisnik = GetTrenutniKorisnik();
                 bool isAdmin = trenutniKorisnik?.Uloga?.UlogaNaziv == "Admin";
+
                 if (!isAdmin && kviz.KorisnikId != trenutniKorisnik?.KorisnikId)
                 {
-                    TempData["Greska"] = "Nemate pravo da menjate ovaj kviz jer niste njegov kreator!";
-                    return RedirectToAction(nameof(Index));
+                    return Forbid();
                 }
 
                 PopuniListe();
@@ -375,34 +349,30 @@ namespace SharpMind.Controllers
             }
         }
 
-        // POST: Kviz/Edit/5
+        // POST: Kviz/Edit/5 
         [HttpPost, ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin, Profesor")]
         public IActionResult Edit(int id, Kviz kviz, List<int> izabranaPitanja)
         {
-            var trenutniKorisnik = _context.Korisnici
-                .Include(k => k.Uloga)
-                .FirstOrDefault(k => k.KorisnikIme == User.Identity.Name);
-
-
+            var trenutniKorisnik = GetTrenutniKorisnik();
             var postojeci = _context.Kvizovi.Include(k => k.KvizPitanja).FirstOrDefault(k => k.KvizId == id);
             if (postojeci == null) return NotFound();
 
             bool isAdmin = trenutniKorisnik?.Uloga?.UlogaNaziv == "Admin";
+
             if (!isAdmin && postojeci.KorisnikId != trenutniKorisnik?.KorisnikId)
             {
-                TempData["Greska"] = "Nemate ovlašćenje da sačuvate izmene na ovom kvizu!";
-                return RedirectToAction(nameof(Index));
+                return Forbid();
             }
 
             int izabranoBroj = izabranaPitanja?.Count ?? 0;
             if (izabranoBroj < 5)
             {
                 int faliJos = 5 - izabranoBroj;
-                string recPitanje = faliJos == 1 ? "pitanje" : (faliJos >= 2 && faliJos <= 4) ? "pitanja" : "pitanja";
+                string recPitanje = faliJos == 1 ? "pitanje" : "pitanja";
                 ModelState.AddModelError("", $"Nedovoljan broj pitanja za izmenu kviza. Izabrali ste {izabranoBroj}, potrebno je da izaberete još {faliJos} {recPitanje}.");
             }
 
- 
             bool naslovPostoji = _context.Kvizovi.Any(k => k.KvizNaslov == kviz.KvizNaslov && k.KvizId != id);
             if (naslovPostoji)
             {
@@ -415,7 +385,6 @@ namespace SharpMind.Controllers
             {
                 try
                 {
-
                     postojeci.KvizNaslov = kviz.KvizNaslov;
                     postojeci.TipKviza = kviz.TipKviza;
                     postojeci.VremenskoOgranicenje = kviz.VremenskoOgranicenje;
@@ -426,9 +395,7 @@ namespace SharpMind.Controllers
                         postojeci.KorisnikId = kviz.KorisnikId;
                     }
 
-
                     _context.KvizPitanja.RemoveRange(postojeci.KvizPitanja);
-
 
                     if (izabranaPitanja != null)
                     {
@@ -443,7 +410,6 @@ namespace SharpMind.Controllers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-
                     ModelState.AddModelError("", "Podaci o kvizu su izmenjeni u bazi od strane drugog korisnika.");
                 }
                 catch (Exception)
@@ -459,8 +425,9 @@ namespace SharpMind.Controllers
             return View(kviz);
         }
 
-        // POST: Kviz/Delete/5
+        // POST: Kviz/Delete/5 
         [HttpPost, ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin, Profesor")]
         public IActionResult Delete(int id)
         {
             try
@@ -468,18 +435,13 @@ namespace SharpMind.Controllers
                 var kviz = _context.Kvizovi.Include(k => k.KvizPitanja).FirstOrDefault(k => k.KvizId == id);
                 if (kviz == null) return NotFound();
 
-                //  Profesor briše isključivo svoje kvizove, Admin briše bilo koji kviz
-                var trenutniKorisnik = _context.Korisnici
-                    .Include(k => k.Uloga)
-                    .FirstOrDefault(k => k.KorisnikIme == User.Identity.Name);
-
+                var trenutniKorisnik = GetTrenutniKorisnik();
                 bool isAdmin = trenutniKorisnik?.Uloga?.UlogaNaziv == "Admin";
+
                 if (!isAdmin && kviz.KorisnikId != trenutniKorisnik?.KorisnikId)
                 {
-                    TempData["Greska"] = "Nemate pravo da obrišete ovaj kviz jer niste njegov kreator!";
-                    return RedirectToAction(nameof(Index));
+                    return Forbid();
                 }
-
 
                 _context.KvizPitanja.RemoveRange(kviz.KvizPitanja);
                 _context.Kvizovi.Remove(kviz);
@@ -488,7 +450,6 @@ namespace SharpMind.Controllers
             }
             catch (DbUpdateException)
             {
-             
                 TempData["Greska"] = "Kviz ne može biti obrisan jer postoje evidentirani rezultati učenika koji su ga rešavali.";
             }
             catch (Exception)
@@ -500,7 +461,6 @@ namespace SharpMind.Controllers
 
         private void PopuniListe()
         {
-            // Iz baze povlačimo samo ona pitanja koja imaju definisan bar jedan tačan odgovor i ukupno najmanje 2 odgovora
             ViewBag.Pitanja = _context.Pitanja
                 .Where(p => _context.Odgovori.Any(o => o.PitanjeId == p.PitanjeId && o.OdgovorTacnost == true)
                          && _context.Odgovori.Count(o => o.PitanjeId == p.PitanjeId) >= 2)
@@ -510,7 +470,6 @@ namespace SharpMind.Controllers
                 .Where(k => k.Uloga.UlogaNaziv == "Profesor" || k.Uloga.UlogaNaziv == "Admin")
                 .ToList();
         }
-
 
         private void ValidirajKviz(Kviz kviz)
         {
@@ -524,12 +483,10 @@ namespace SharpMind.Controllers
             }
             else if (kviz.TipKviza == "zivoti")
             {
-
                 if (kviz.BrojZivota < 1 || kviz.BrojZivota > 9)
                 {
                     ModelState.AddModelError("BrojZivota", "Broj života mora biti između 1 i 9.");
                 }
-
                 kviz.VremenskoOgranicenje = null;
             }
         }

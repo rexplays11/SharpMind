@@ -124,12 +124,7 @@ namespace SharpMind.Tests
 
         #region TESTOVI ZA REGISTER (REGISTRACIJA)
 
-        [Fact]
-        public void Register_Get_VracaViewResult()
-        {
-            var result = _controller.Register();
-            Assert.IsType<ViewResult>(result);
-        }
+       
 
         [Fact]
         public void Register_Post_PraznaPolja_VracaViewSaGreskom()

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SharpMind.Data;
@@ -7,6 +8,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace SharpMindApi.Controllers
 {
@@ -20,10 +23,7 @@ namespace SharpMindApi.Controllers
             _context = context;
         }
 
-
         // INDEX: Prikaz i upravljanje listom korisnika 
-
-
         [Authorize(Roles = "Admin, Profesor")]
         public async Task<IActionResult> Index(string sortOrder, int page = 1, int pageSize = 25)
         {
@@ -39,7 +39,6 @@ namespace SharpMindApi.Controllers
                 ViewBag.CurrentSort = sortOrder;
                 ViewBag.CurrentPageSize = pageSize;
 
-               
                 var query = _context.Korisnici
                     .Include(k => k.Uloga)
                     .Include(k => k.Nivo)
@@ -74,9 +73,7 @@ namespace SharpMindApi.Controllers
             }
         }
 
-
-
-
+        // CREATE (Admin)
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create()
         {
@@ -102,6 +99,12 @@ namespace SharpMindApi.Controllers
             {
                 try
                 {
+                    if (!string.IsNullOrWhiteSpace(korisnik.KorisnikLozinka))
+                    {
+                        var passwordHasher = new PasswordHasher<Korisnik>();
+                        korisnik.KorisnikLozinka = passwordHasher.HashPassword(korisnik, korisnik.KorisnikLozinka);
+                    }
+
                     _context.Korisnici.Add(korisnik);
                     await _context.SaveChangesAsync();
                     return RedirectToAction(nameof(Index));
@@ -120,11 +123,8 @@ namespace SharpMindApi.Controllers
             return View(korisnik);
         }
 
-
         // EDIT: Izmena korisnika (Admin ili Profesor za sebe/svoje studente)
-
-
-        [Authorize(Roles = "Admin, Profesor")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int id)
         {
             try
@@ -134,7 +134,6 @@ namespace SharpMindApi.Controllers
 
                 var korisnik = await _context.Korisnici.FindAsync(id);
                 if (korisnik == null) return NotFound();
-
 
                 bool isProfesorOnly = User.IsInRole("Profesor") && !User.IsInRole("Admin");
                 if (isProfesorOnly && korisnik.KorisnikId != ulogovaniKorisnik.KorisnikId && korisnik.ProfesorId != ulogovaniKorisnik.KorisnikId)
@@ -154,7 +153,7 @@ namespace SharpMindApi.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin, Profesor")]
+        [Authorize(Roles = "Admin")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, Korisnik model)
         {
@@ -175,9 +174,16 @@ namespace SharpMindApi.Controllers
 
             UkloniNavigacionePropertijeIzModela();
 
+            // Ako lozinka nije uneta prilikom izmene, uklanjamo je iz ModelState-a da ne bi blokirala čuvanje
+            if (string.IsNullOrWhiteSpace(model.KorisnikLozinka))
+            {
+                ModelState.Remove(nameof(Korisnik.KorisnikLozinka));
+            }
+
+            var passwordHasher = new PasswordHasher<Korisnik>();
+
             if (isProfesorOnly)
             {
-
                 ModelState.Remove(nameof(Korisnik.KorisnikDatumRegistracije));
                 ModelState.Remove(nameof(Korisnik.UlogaId));
                 ModelState.Remove(nameof(Korisnik.ProfesorId));
@@ -187,17 +193,15 @@ namespace SharpMindApi.Controllers
                 korisnikIzBaze.KorisnikIme = model.KorisnikIme;
                 if (!string.IsNullOrWhiteSpace(model.KorisnikLozinka))
                 {
-                    korisnikIzBaze.KorisnikLozinka = model.KorisnikLozinka;
+                    korisnikIzBaze.KorisnikLozinka = passwordHasher.HashPassword(korisnikIzBaze, model.KorisnikLozinka);
                 }
-
             }
             else
             {
-
                 korisnikIzBaze.KorisnikIme = model.KorisnikIme;
                 if (!string.IsNullOrWhiteSpace(model.KorisnikLozinka))
                 {
-                    korisnikIzBaze.KorisnikLozinka = model.KorisnikLozinka;
+                    korisnikIzBaze.KorisnikLozinka = passwordHasher.HashPassword(korisnikIzBaze, model.KorisnikLozinka);
                 }
                 korisnikIzBaze.UlogaId = model.UlogaId;
                 korisnikIzBaze.ProfesorId = model.ProfesorId;
@@ -236,11 +240,8 @@ namespace SharpMindApi.Controllers
             return View(korisnikIzBaze);
         }
 
-
-        // DETAILS: Detaljan pregled korisnika (Samo Admin)
-
-
-         [Authorize(Roles = "Admin, Profesor")]
+        // DETAILS: Detaljan pregled korisnika
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Details(int id)
         {
             try
@@ -262,10 +263,7 @@ namespace SharpMindApi.Controllers
             }
         }
 
-
-        // DELETE: Brisanje korisnika (Samo Admin)
-
-
+        // DELETE: Brisanje korisnika
         [HttpPost]
         [Authorize(Roles = "Admin, Profesor")]
         [ValidateAntiForgeryToken]
@@ -302,9 +300,7 @@ namespace SharpMindApi.Controllers
             }
         }
 
-
         // PROFIL: Prikaz sopstvenog profila
-
         public async Task<IActionResult> Profil()
         {
             try
@@ -371,10 +367,7 @@ namespace SharpMindApi.Controllers
             }
         }
 
-
         // REGISTRACIJA: Dodavanje studenata (Profesor i Admin)
-
-
         [Authorize(Roles = "Admin, Profesor")]
         public async Task<IActionResult> Registracija()
         {
@@ -384,7 +377,7 @@ namespace SharpMindApi.Controllers
                     .Include(k => k.Uloga)
                     .FirstOrDefaultAsync(k => k.KorisnikIme == User.Identity.Name);
 
-                if (ulogovaniKorisnik == null) return RedirectToAction("Login", "Nalog");
+                if (ulogovaniKorisnik == null) return RedirectToAction("Login", "Account");
 
                 bool isAdmin = ulogovaniKorisnik.Uloga?.UlogaNaziv == "Admin";
                 ViewBag.IsAdmin = isAdmin;
@@ -418,7 +411,7 @@ namespace SharpMindApi.Controllers
                 .Include(k => k.Uloga)
                 .FirstOrDefaultAsync(k => k.KorisnikIme == User.Identity.Name);
 
-            if (ulogovaniKorisnik == null) return RedirectToAction("Login", "Nalog");
+            if (ulogovaniKorisnik == null) return RedirectToAction("Login", "Account");
 
             bool isAdmin = ulogovaniKorisnik.Uloga?.UlogaNaziv == "Admin";
 
@@ -471,6 +464,12 @@ namespace SharpMindApi.Controllers
                         korisnik.KorisnikDatumRegistracije = DateTime.Now;
                     }
 
+                    if (!string.IsNullOrWhiteSpace(korisnik.KorisnikLozinka))
+                    {
+                        var passwordHasher = new PasswordHasher<Korisnik>();
+                        korisnik.KorisnikLozinka = passwordHasher.HashPassword(korisnik, korisnik.KorisnikLozinka);
+                    }
+
                     _context.Korisnici.Add(korisnik);
                     await _context.SaveChangesAsync();
                     return RedirectToAction("Index", "Home");
@@ -516,10 +515,9 @@ namespace SharpMindApi.Controllers
                     .Include(k => k.Uloga)
                     .Include(k => k.Nivo)
                     .Include(k => k.Profesor)
-                    .Where(k => k.Uloga.UlogaNaziv == "Student") 
+                    .Where(k => k.Uloga.UlogaNaziv == "Student")
                     .AsQueryable();
 
-               
                 query = query.Where(k => k.ProfesorId == ulogovaniKorisnik.KorisnikId);
 
                 query = sortOrder == "id_asc"
@@ -550,21 +548,26 @@ namespace SharpMindApi.Controllers
             }
         }
 
-
         // GET: Korisnici/Azuriranje/5
         [HttpGet]
         public async Task<IActionResult> Azuriranje(int? id)
         {
-            if (id == null)
+            if (id == null) return NotFound();
+
+            var trenutniKorisnik = await _context.Korisnici
+                .Include(k => k.Uloga)
+                .FirstOrDefaultAsync(k => k.KorisnikIme == User.Identity.Name);
+
+            if (trenutniKorisnik == null) return RedirectToAction("Login", "Account");
+
+            // Stroga zabrana za SVE uloge (Admin, Profesor, Student): svako može da menja samo svoj ID
+            if (trenutniKorisnik.KorisnikId != id.Value)
             {
-                return NotFound();
+                return Forbid();
             }
 
             var korisnik = await _context.Korisnici.FindAsync(id);
-            if (korisnik == null)
-            {
-                return NotFound();
-            }
+            if (korisnik == null) return NotFound();
 
             ViewBag.Uloge = await _context.Uloge.ToListAsync();
             ViewBag.Nivoi = await _context.Nivoi.ToListAsync();
@@ -580,16 +583,30 @@ namespace SharpMindApi.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Azuriranje(Korisnik model)
         {
-            var korisnikIzBaze = await _context.Korisnici.FindAsync(model.KorisnikId);
-            if (korisnikIzBaze == null)
+            var trenutniKorisnik = await _context.Korisnici
+                .Include(k => k.Uloga)
+                .FirstOrDefaultAsync(k => k.KorisnikIme == User.Identity.Name);
+
+            if (trenutniKorisnik == null) return RedirectToAction("Login", "Account");
+
+            // Stroga zabrana u POST metodi za SVE uloge: sprečava izmenu tuđeg naloga slanjem drugog ID-ja
+            if (trenutniKorisnik.KorisnikId != model.KorisnikId)
             {
-                return NotFound();
+                return Forbid();
             }
 
-            korisnikIzBaze.KorisnikIme = model.KorisnikIme;
-            if (!string.IsNullOrWhiteSpace(model.KorisnikLozinka))
+            var korisnikIzBaze = await _context.Korisnici.FindAsync(model.KorisnikId);
+            if (korisnikIzBaze == null) return NotFound();
+
+            bool promenjenoIme = !string.Equals(korisnikIzBaze.KorisnikIme, model.KorisnikIme?.Trim(), StringComparison.Ordinal);
+            bool promenjenaLozinka = !string.IsNullOrWhiteSpace(model.KorisnikLozinka);
+
+            korisnikIzBaze.KorisnikIme = model.KorisnikIme?.Trim();
+
+            if (promenjenaLozinka)
             {
-                korisnikIzBaze.KorisnikLozinka = model.KorisnikLozinka;
+                var passwordHasher = new PasswordHasher<Korisnik>();
+                korisnikIzBaze.KorisnikLozinka = passwordHasher.HashPassword(korisnikIzBaze, model.KorisnikLozinka);
             }
 
             if (User.IsInRole("Profesor") || User.IsInRole("Admin"))
@@ -597,7 +614,7 @@ namespace SharpMindApi.Controllers
                 korisnikIzBaze.NivoId = model.NivoId;
                 korisnikIzBaze.UkupnoPoena = model.UkupnoPoena;
             }
-            if (User.Identity.IsAuthenticated && User.IsInRole("Admin"))
+            if (User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("Admin"))
             {
                 korisnikIzBaze.UlogaId = model.UlogaId;
                 korisnikIzBaze.ProfesorId = model.ProfesorId;
@@ -607,11 +624,18 @@ namespace SharpMindApi.Controllers
             {
                 _context.Update(korisnikIzBaze);
                 await _context.SaveChangesAsync();
+
+
+                if (promenjenoIme || promenjenaLozinka)
+                {
+                    await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                    return RedirectToAction("Login", "Account");
+                }
+
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception)
             {
-
                 ViewBag.Uloge = await _context.Uloge.ToListAsync();
                 ViewBag.Nivoi = await _context.Nivoi.ToListAsync();
                 ViewBag.Profesori = await _context.Korisnici
@@ -623,7 +647,7 @@ namespace SharpMindApi.Controllers
             }
         }
 
-
+        // STUDENT EDIT
         [Authorize(Roles = "Admin, Profesor")]
         [HttpGet]
         public async Task<IActionResult> StudentEdit(int? id)
@@ -645,7 +669,7 @@ namespace SharpMindApi.Controllers
                 .Include(k => k.Uloga)
                 .FirstOrDefaultAsync(k => k.KorisnikIme == User.Identity.Name);
 
-            if (ulogovaniKorisnik == null) return RedirectToAction("Login", "Nalog");
+            if (ulogovaniKorisnik == null) return RedirectToAction("Login", "Account");
 
             bool isAdmin = ulogovaniKorisnik.Uloga?.UlogaNaziv == "Admin";
 
@@ -663,6 +687,7 @@ namespace SharpMindApi.Controllers
 
             return View(korisnik);
         }
+
         [HttpPost]
         [Authorize(Roles = "Admin, Profesor")]
         [ValidateAntiForgeryToken]
@@ -684,7 +709,7 @@ namespace SharpMindApi.Controllers
                 .Include(k => k.Uloga)
                 .FirstOrDefaultAsync(k => k.KorisnikIme == User.Identity.Name);
 
-            if (ulogovaniKorisnik == null) return RedirectToAction("Login", "Nalog");
+            if (ulogovaniKorisnik == null) return RedirectToAction("Login", "Account");
 
             bool isAdmin = ulogovaniKorisnik.Uloga?.UlogaNaziv == "Admin";
 
@@ -695,10 +720,16 @@ namespace SharpMindApi.Controllers
 
             UkloniNavigacionePropertijeIzModela();
 
+            if (string.IsNullOrWhiteSpace(model.KorisnikLozinka))
+            {
+                ModelState.Remove(nameof(Korisnik.KorisnikLozinka));
+            }
+
             korisnikIzBaze.KorisnikIme = model.KorisnikIme;
             if (!string.IsNullOrWhiteSpace(model.KorisnikLozinka))
             {
-                korisnikIzBaze.KorisnikLozinka = model.KorisnikLozinka;
+                var passwordHasher = new PasswordHasher<Korisnik>();
+                korisnikIzBaze.KorisnikLozinka = passwordHasher.HashPassword(korisnikIzBaze, model.KorisnikLozinka);
             }
 
             korisnikIzBaze.NivoId = model.NivoId;
@@ -741,7 +772,6 @@ namespace SharpMindApi.Controllers
                 }
             }
 
-
             ViewBag.Uloge = await _context.Uloge.ToListAsync();
             ViewBag.Nivoi = await _context.Nivoi.ToListAsync();
             ViewBag.Profesori = await _context.Korisnici
@@ -752,7 +782,7 @@ namespace SharpMindApi.Controllers
             return View(model);
         }
 
-
+        // STUDENT DETAILS
         [Authorize(Roles = "Admin, Profesor")]
         [HttpGet]
         public async Task<IActionResult> StudentDetails(int? id)
@@ -790,7 +820,7 @@ namespace SharpMindApi.Controllers
             }
         }
 
-
+        // STUDENT DELETE
         [HttpPost]
         [Authorize(Roles = "Admin, Profesor")]
         [ValidateAntiForgeryToken]
@@ -819,7 +849,6 @@ namespace SharpMindApi.Controllers
                     }
                 }
 
-
                 var korisnikoviKvizovi = await _context.Kvizovi
                     .Where(k => k.KorisnikId == id)
                     .ToListAsync();
@@ -846,9 +875,7 @@ namespace SharpMindApi.Controllers
             }
         }
 
-
         // POMOĆNE METODE
-
         private async Task PopuniListeAsync()
         {
             ViewBag.Uloge = await _context.Uloge.ToListAsync();

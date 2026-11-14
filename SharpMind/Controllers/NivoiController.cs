@@ -22,7 +22,7 @@ namespace SharpMindApi.Controllers
         // INDEX METODA (Prikaz i upravljanje listom)
 
         // GET: /Nivoi
-        [AllowAnonymous] 
+        [Authorize]
         public IActionResult Index(string sortOrder, int page = 1, int pageSize = 25)
         {
             try
@@ -170,7 +170,7 @@ namespace SharpMindApi.Controllers
         }
 
         // GET: /Nivoi/Details/5
-        [AllowAnonymous] 
+        [Authorize]
         public IActionResult Details(int id)
         {
             try

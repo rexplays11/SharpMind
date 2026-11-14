@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SharpMind.Data;
@@ -22,6 +23,7 @@ namespace SharpMind.Controllers
         {
             _context = context;
         }
+
         [AllowAnonymous]
         [HttpGet]
         public IActionResult Login() => View();
@@ -32,35 +34,61 @@ namespace SharpMind.Controllers
         {
             try
             {
-                var user = _context.Korisnici
+                var user = await _context.Korisnici
                     .Include(u => u.Uloga)
-                    .FirstOrDefault(u => u.KorisnikIme == username && u.KorisnikLozinka == password);
+                    .FirstOrDefaultAsync(u => u.KorisnikIme == username);
 
-                if (user != null)
+                if (user != null && !string.IsNullOrEmpty(password))
                 {
-                    var claims = new List<Claim>
+                    var passwordHasher = new PasswordHasher<Korisnik>();
+                    bool lozinkaIspravna = false;
+
+                    try
                     {
-                        new Claim(ClaimTypes.Name, user.KorisnikIme),
-                        new Claim(ClaimTypes.NameIdentifier, user.KorisnikId.ToString()),
-                        new Claim(ClaimTypes.Role, user.Uloga?.UlogaNaziv ?? "Student")
-                    };
+                        var result = passwordHasher.VerifyHashedPassword(user, user.KorisnikLozinka, password);
+                        if (result == PasswordVerificationResult.Success || result == PasswordVerificationResult.SuccessRehashNeeded)
+                        {
+                            lozinkaIspravna = true;
+                        }
+                    }
+                    catch (FormatException)
+                    {
 
-                    var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-                    await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
+                        if (user.KorisnikLozinka == password)
+                        {
+                            lozinkaIspravna = true;
+                            user.KorisnikLozinka = passwordHasher.HashPassword(user, password);
+                            _context.Update(user);
+                            await _context.SaveChangesAsync();
+                        }
+                    }
 
-                    return RedirectToAction("Index", "Home");
+                    if (lozinkaIspravna)
+                    {
+                        var claims = new List<Claim>
+                        {
+                            new Claim(ClaimTypes.Name, user.KorisnikIme),
+                            new Claim(ClaimTypes.NameIdentifier, user.KorisnikId.ToString()),
+                            new Claim(ClaimTypes.Role, user.Uloga?.UlogaNaziv ?? "Student")
+                        };
+
+                        var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
+
+                        return RedirectToAction("Index", "Home");
+                    }
                 }
 
                 ViewBag.Error = "Neispravno ime ili lozinka.";
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-
                 ViewBag.Error = "Došlo je do greške na serveru prilikom prijave. Molimo pokušajte ponovo.";
             }
 
             return View();
         }
+
         [AllowAnonymous]
         [HttpGet]
         public IActionResult Register() => View();
@@ -68,9 +96,9 @@ namespace SharpMind.Controllers
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public IActionResult Register(string KorisnikIme, string KorisnikLozinka)
+        public async Task<IActionResult> Register(string KorisnikIme, string KorisnikLozinka)
         {
-            if (string.IsNullOrEmpty(KorisnikIme) || string.IsNullOrEmpty(KorisnikLozinka))
+            if (string.IsNullOrWhiteSpace(KorisnikIme) || string.IsNullOrWhiteSpace(KorisnikLozinka))
             {
                 ViewBag.Error = "Sva polja su obavezna.";
                 return View();
@@ -78,7 +106,7 @@ namespace SharpMind.Controllers
 
             try
             {
-                if (_context.Korisnici.Any(u => u.KorisnikIme == KorisnikIme))
+                if (await _context.Korisnici.AnyAsync(u => u.KorisnikIme == KorisnikIme))
                 {
                     ViewBag.Error = "Korisničko ime je zauzeto.";
                     return View();
@@ -86,32 +114,33 @@ namespace SharpMind.Controllers
 
                 var noviKorisnik = new Korisnik
                 {
-                    KorisnikIme = KorisnikIme,
-                    KorisnikLozinka = KorisnikLozinka,
+                    KorisnikIme = KorisnikIme.Trim(),
                     KorisnikDatumRegistracije = DateTime.Now,
-                    UlogaId = 2,     
-                    NivoId = 1,       
-                    UkupnoPoena = 0,  
-                    ProfesorId = null 
+                    UlogaId = 3,
+                    NivoId = 1,
+                    UkupnoPoena = 0,
+                    ProfesorId = null
                 };
 
+                var passwordHasher = new PasswordHasher<Korisnik>();
+                noviKorisnik.KorisnikLozinka = passwordHasher.HashPassword(noviKorisnik, KorisnikLozinka);
+
                 _context.Korisnici.Add(noviKorisnik);
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
 
                 return RedirectToAction("Login");
             }
-            catch (DbUpdateException ex)
+            catch (DbUpdateException)
             {
                 ViewBag.Error = "Sistemska greška pri čuvanju podataka. Proverite da li su unosi ispravni.";
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 ViewBag.Error = "Došlo je do greške na serveru. Registracija trenutno nije moguća.";
             }
 
             return View();
         }
-
 
         public async Task<IActionResult> Logout()
         {
@@ -124,6 +153,21 @@ namespace SharpMind.Controllers
             }
 
             return RedirectToAction("Login");
+        }
+
+        [AllowAnonymous]
+        [HttpGet]
+        public IActionResult AccessDenied()
+        {
+            string refererUrl = Request.Headers["Referer"].ToString();
+            TempData["Error"] = "Nemate prava pristupa toj stranici.";
+
+            if (!string.IsNullOrEmpty(refererUrl))
+            {
+                return Redirect(refererUrl);
+            }
+
+            return RedirectToAction("Index", "Home");
         }
     }
 }

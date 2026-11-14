@@ -17,15 +17,33 @@ namespace SharpMindApi.Controllers
 
         public PitanjaController(SharpMindContext context) => _context = context;
 
+        private Korisnik GetTrenutniKorisnik()
+        {
+            return _context.Korisnici
+                .Include(k => k.Uloga)
+                .FirstOrDefault(k => k.KorisnikIme == User.Identity.Name);
+        }
+
+        private async Task<Korisnik> GetTrenutniKorisnikAsync()
+        {
+            return await _context.Korisnici
+                .Include(k => k.Uloga)
+                .FirstOrDefaultAsync(k => k.KorisnikIme == User.Identity.Name);
+        }
+
         // INDEX METODA (Prikaz i upravljanje listom)
 
         // GET: /Pitanja
-        [AllowAnonymous]
+        [Authorize(Roles = "Admin, Profesor")]
         public IActionResult Index(string sortOrder, int page = 1, int pageSize = 25)
         {
             try
             {
                 if (pageSize < 1) pageSize = 25;
+
+                var trenutniKorisnik = GetTrenutniKorisnik();
+                ViewBag.TrenutniKorisnikId = trenutniKorisnik?.KorisnikId;
+                ViewBag.IsAdmin = trenutniKorisnik?.Uloga?.UlogaNaziv == "Admin";
 
                 ViewBag.IdSortParm = sortOrder == "id_asc" ? "id_desc" : "id_asc";
                 ViewBag.CurrentSort = sortOrder;
@@ -95,6 +113,15 @@ namespace SharpMindApi.Controllers
             ModelState.Remove("Nivo");
             ModelState.Remove("Odgovori");
 
+            var trenutniKorisnik = GetTrenutniKorisnik();
+            if (trenutniKorisnik == null) return RedirectToAction("Login", "Account");
+
+            bool isAdmin = trenutniKorisnik.Uloga?.UlogaNaziv == "Admin";
+            if (!isAdmin || pitanje.KorisnikId == 0)
+            {
+                pitanje.KorisnikId = trenutniKorisnik.KorisnikId;
+            }
+
             if (pitanje != null && !string.IsNullOrWhiteSpace(pitanje.PitanjeTekst))
             {
                 bool postoji = _context.Pitanja.Any(p => p.PitanjeTekst.ToLower() == pitanje.PitanjeTekst.Trim().ToLower());
@@ -134,6 +161,14 @@ namespace SharpMindApi.Controllers
                 var pitanje = _context.Pitanja.Find(id);
                 if (pitanje == null) return NotFound();
 
+                var trenutniKorisnik = GetTrenutniKorisnik();
+                bool isAdmin = trenutniKorisnik?.Uloga?.UlogaNaziv == "Admin";
+
+                if (!isAdmin && pitanje.KorisnikId != trenutniKorisnik?.KorisnikId)
+                {
+                    return Forbid();
+                }
+
                 PopuniListe();
                 return View(pitanje);
             }
@@ -154,6 +189,17 @@ namespace SharpMindApi.Controllers
             ModelState.Remove("Nivo");
             ModelState.Remove("Odgovori");
 
+            var trenutniKorisnik = GetTrenutniKorisnik();
+            var postojece = _context.Pitanja.Find(pitanje.PitanjeId);
+            if (postojece == null) return NotFound();
+
+            bool isAdmin = trenutniKorisnik?.Uloga?.UlogaNaziv == "Admin";
+
+            if (!isAdmin && postojece.KorisnikId != trenutniKorisnik?.KorisnikId)
+            {
+                return Forbid();
+            }
+
             if (pitanje != null && !string.IsNullOrWhiteSpace(pitanje.PitanjeTekst))
             {
                 bool postoji = _context.Pitanja.Any(p => p.PitanjeTekst.ToLower() == pitanje.PitanjeTekst.Trim().ToLower()
@@ -168,8 +214,15 @@ namespace SharpMindApi.Controllers
             {
                 try
                 {
-                    pitanje.PitanjeTekst = pitanje.PitanjeTekst.Trim();
-                    _context.Pitanja.Update(pitanje);
+                    postojece.PitanjeTekst = pitanje.PitanjeTekst.Trim();
+                    postojece.BlokKod = pitanje.BlokKod;
+                    postojece.NivoId = pitanje.NivoId;
+
+                    if (isAdmin && pitanje.KorisnikId > 0)
+                    {
+                        postojece.KorisnikId = pitanje.KorisnikId;
+                    }
+
                     _context.SaveChanges();
                     return RedirectToAction(nameof(Index));
                 }
@@ -188,8 +241,8 @@ namespace SharpMindApi.Controllers
         }
 
         // GET: /Pitanja/Details/5
-        //  Detaljan pregled jednog konkretnog pitanja. Omogućava detaljan uvid u pitanje i njegove odgovore.
-        [AllowAnonymous]
+        // Detaljan pregled jednog konkretnog pitanja. Omogućava detaljan uvid u pitanje i njegove odgovore.
+        [Authorize(Roles = "Admin, Profesor")]
         public IActionResult Details(int id)
         {
             try
@@ -201,6 +254,10 @@ namespace SharpMindApi.Controllers
                     .FirstOrDefault(p => p.PitanjeId == id);
 
                 if (pitanje == null) return NotFound();
+
+                var trenutniKorisnik = GetTrenutniKorisnik();
+                ViewBag.TrenutniKorisnikId = trenutniKorisnik?.KorisnikId;
+                ViewBag.IsAdmin = trenutniKorisnik?.Uloga?.UlogaNaziv == "Admin";
 
                 return View(pitanje);
             }
@@ -224,19 +281,26 @@ namespace SharpMindApi.Controllers
                     .Include(p => p.Odgovori)
                     .FirstOrDefault(p => p.PitanjeId == id);
 
-                if (pitanje != null)
+                if (pitanje == null) return NotFound();
+
+                var trenutniKorisnik = GetTrenutniKorisnik();
+                bool isAdmin = trenutniKorisnik?.Uloga?.UlogaNaziv == "Admin";
+
+                if (!isAdmin && pitanje.KorisnikId != trenutniKorisnik?.KorisnikId)
                 {
-                    if (pitanje.Odgovori != null && pitanje.Odgovori.Any())
-                    {
-                        _context.Odgovori.RemoveRange(pitanje.Odgovori);
-                    }
-
-                    _context.Pitanja.Remove(pitanje);
-
-                    _context.SaveChanges();
-
-                    TempData["Success"] = "Pitanje i svi njegovi odgovori su uspešno obrisani.";
+                    return Forbid();
                 }
+
+                if (pitanje.Odgovori != null && pitanje.Odgovori.Any())
+                {
+                    _context.Odgovori.RemoveRange(pitanje.Odgovori);
+                }
+
+                _context.Pitanja.Remove(pitanje);
+
+                _context.SaveChanges();
+
+                TempData["Success"] = "Pitanje i svi njegovi odgovori su uspešno obrisani.";
             }
             catch (DbUpdateException)
             {
@@ -263,10 +327,7 @@ namespace SharpMindApi.Controllers
                 ViewBag.CurrentSort = sortOrder;
                 ViewBag.CurrentPageSize = pageSize;
 
-                var trenutniKorisnikIme = User.Identity?.Name;
-                var trenutniKorisnik = await _context.Korisnici
-                    .Include(k => k.Uloga)
-                    .FirstOrDefaultAsync(k => k.KorisnikIme == trenutniKorisnikIme);
+                var trenutniKorisnik = await GetTrenutniKorisnikAsync();
 
                 ViewBag.TrenutniKorisnikId = trenutniKorisnik?.KorisnikId;
                 ViewBag.IsAdmin = trenutniKorisnik?.Uloga?.UlogaNaziv == "Admin";
@@ -376,6 +437,15 @@ namespace SharpMindApi.Controllers
             ModelState.Remove("Nivo");
             ModelState.Remove("Odgovori");
 
+            var trenutniKorisnik = GetTrenutniKorisnik();
+            if (trenutniKorisnik == null) return RedirectToAction("Login", "Account");
+
+            bool isAdmin = trenutniKorisnik.Uloga?.UlogaNaziv == "Admin";
+            if (!isAdmin || pitanje.KorisnikId == 0)
+            {
+                pitanje.KorisnikId = trenutniKorisnik.KorisnikId;
+            }
+
             if (pitanje != null && !string.IsNullOrWhiteSpace(pitanje.PitanjeTekst))
             {
                 bool postoji = _context.Pitanja.Any(p => p.PitanjeTekst.ToLower() == pitanje.PitanjeTekst.Trim().ToLower());
@@ -413,6 +483,14 @@ namespace SharpMindApi.Controllers
                 var pitanje = _context.Pitanja.Find(id);
                 if (pitanje == null) return NotFound();
 
+                var trenutniKorisnik = GetTrenutniKorisnik();
+                bool isAdmin = trenutniKorisnik?.Uloga?.UlogaNaziv == "Admin";
+
+                if (!isAdmin && pitanje.KorisnikId != trenutniKorisnik?.KorisnikId)
+                {
+                    return Forbid();
+                }
+
                 PopuniListe();
                 return View(pitanje);
             }
@@ -433,6 +511,17 @@ namespace SharpMindApi.Controllers
             ModelState.Remove("Nivo");
             ModelState.Remove("Odgovori");
 
+            var trenutniKorisnik = GetTrenutniKorisnik();
+            var postojece = _context.Pitanja.Find(pitanje.PitanjeId);
+            if (postojece == null) return NotFound();
+
+            bool isAdmin = trenutniKorisnik?.Uloga?.UlogaNaziv == "Admin";
+
+            if (!isAdmin && postojece.KorisnikId != trenutniKorisnik?.KorisnikId)
+            {
+                return Forbid();
+            }
+
             if (pitanje != null && !string.IsNullOrWhiteSpace(pitanje.PitanjeTekst))
             {
                 bool postoji = _context.Pitanja.Any(p => p.PitanjeTekst.ToLower() == pitanje.PitanjeTekst.Trim().ToLower()
@@ -447,8 +536,15 @@ namespace SharpMindApi.Controllers
             {
                 try
                 {
-                    pitanje.PitanjeTekst = pitanje.PitanjeTekst.Trim();
-                    _context.Pitanja.Update(pitanje);
+                    postojece.PitanjeTekst = pitanje.PitanjeTekst.Trim();
+                    postojece.BlokKod = pitanje.BlokKod;
+                    postojece.NivoId = pitanje.NivoId;
+
+                    if (isAdmin && pitanje.KorisnikId > 0)
+                    {
+                        postojece.KorisnikId = pitanje.KorisnikId;
+                    }
+
                     _context.SaveChanges();
                     return RedirectToAction("Objedinjeno");
                 }
@@ -479,6 +575,14 @@ namespace SharpMindApi.Controllers
                     .FirstOrDefaultAsync(p => p.PitanjeId == id);
 
                 if (pitanje == null) return NotFound();
+
+                var trenutniKorisnik = await GetTrenutniKorisnikAsync();
+                bool isAdmin = trenutniKorisnik?.Uloga?.UlogaNaziv == "Admin";
+
+                if (!isAdmin && pitanje.KorisnikId != trenutniKorisnik?.KorisnikId)
+                {
+                    return Forbid();
+                }
 
                 if (pitanje.Odgovori != null && pitanje.Odgovori.Any())
                 {

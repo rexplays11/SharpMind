@@ -9,22 +9,42 @@ using System.Linq;
 
 namespace SharpMindApi.Controllers
 {
-    [Authorize(Roles = "Admin, Profesor")] 
+    [Authorize(Roles = "Admin, Profesor")]
     public class OdgovoriController : Controller
     {
         private readonly SharpMindContext _context;
 
         public OdgovoriController(SharpMindContext context) => _context = context;
 
+        private Korisnik GetTrenutniKorisnik()
+        {
+            return _context.Korisnici
+                .Include(k => k.Uloga)
+                .FirstOrDefault(k => k.KorisnikIme == User.Identity.Name);
+        }
+
+        private bool MozeDaMenjaPitanje(int pitanjeId)
+        {
+            var trenutniKorisnik = GetTrenutniKorisnik();
+            if (trenutniKorisnik == null) return false;
+            if (trenutniKorisnik.Uloga?.UlogaNaziv == "Admin") return true;
+
+            var pitanje = _context.Pitanja.AsNoTracking().FirstOrDefault(p => p.PitanjeId == pitanjeId);
+            return pitanje != null && pitanje.KorisnikId == trenutniKorisnik.KorisnikId;
+        }
+
         // INDEX METODA (Prikaz i upravljanje listom)
 
         // GET: /Odgovori
-        [AllowAnonymous] 
         public IActionResult Index(string sortOrder, int page = 1, int pageSize = 25)
         {
             try
             {
                 if (pageSize < 1) pageSize = 25;
+
+                var trenutniKorisnik = GetTrenutniKorisnik();
+                ViewBag.TrenutniKorisnikId = trenutniKorisnik?.KorisnikId;
+                ViewBag.IsAdmin = trenutniKorisnik?.Uloga?.UlogaNaziv == "Admin";
 
                 ViewBag.IdSortParm = sortOrder == "id_asc" ? "id_desc" : "id_asc";
                 ViewBag.CurrentSort = sortOrder;
@@ -69,6 +89,11 @@ namespace SharpMindApi.Controllers
         // GET: /Odgovori/Create
         public IActionResult Create(int? pitanjeId)
         {
+            if (pitanjeId.HasValue && !MozeDaMenjaPitanje(pitanjeId.Value))
+            {
+                return Forbid();
+            }
+
             PopuniListe();
 
             if (pitanjeId.HasValue)
@@ -86,6 +111,11 @@ namespace SharpMindApi.Controllers
         public IActionResult Create(Odgovor odgovor)
         {
             ModelState.Remove("Pitanje");
+
+            if (!MozeDaMenjaPitanje(odgovor.PitanjeId))
+            {
+                return Forbid();
+            }
 
             if (odgovor.OdgovorTekst != null)
             {
@@ -126,6 +156,11 @@ namespace SharpMindApi.Controllers
                 var odgovor = _context.Odgovori.Find(id);
                 if (odgovor == null) return NotFound();
 
+                if (!MozeDaMenjaPitanje(odgovor.PitanjeId))
+                {
+                    return Forbid();
+                }
+
                 PopuniListe();
                 return View(odgovor);
             }
@@ -143,6 +178,14 @@ namespace SharpMindApi.Controllers
         {
             ModelState.Remove("Pitanje");
 
+            var postojeci = _context.Odgovori.Find(odgovor.OdgovorId);
+            if (postojeci == null) return NotFound();
+
+            if (!MozeDaMenjaPitanje(postojeci.PitanjeId) || !MozeDaMenjaPitanje(odgovor.PitanjeId))
+            {
+                return Forbid();
+            }
+
             if (odgovor.OdgovorTekst != null)
             {
                 odgovor.OdgovorTekst = odgovor.OdgovorTekst.Trim();
@@ -158,7 +201,10 @@ namespace SharpMindApi.Controllers
             {
                 try
                 {
-                    _context.Update(odgovor);
+                    postojeci.OdgovorTekst = odgovor.OdgovorTekst;
+                    postojeci.OdgovorTacnost = odgovor.OdgovorTacnost;
+                    postojeci.PitanjeId = odgovor.PitanjeId;
+
                     _context.SaveChanges();
                     return RedirectToAction(nameof(Index));
                 }
@@ -177,7 +223,6 @@ namespace SharpMindApi.Controllers
         }
 
         // GET: /Odgovori/Details/5
-        [AllowAnonymous] 
         public IActionResult Details(int id)
         {
             try
@@ -188,6 +233,10 @@ namespace SharpMindApi.Controllers
 
                 if (odgovor == null) return NotFound();
 
+                var trenutniKorisnik = GetTrenutniKorisnik();
+                ViewBag.TrenutniKorisnikId = trenutniKorisnik?.KorisnikId;
+                ViewBag.IsAdmin = trenutniKorisnik?.Uloga?.UlogaNaziv == "Admin";
+
                 return View(odgovor);
             }
             catch (Exception)
@@ -197,7 +246,6 @@ namespace SharpMindApi.Controllers
             }
         }
 
-
         // POST: /Odgovori/Delete/5
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -206,11 +254,15 @@ namespace SharpMindApi.Controllers
             try
             {
                 var o = _context.Odgovori.Find(id);
-                if (o != null)
+                if (o == null) return NotFound();
+
+                if (!MozeDaMenjaPitanje(o.PitanjeId))
                 {
-                    _context.Odgovori.Remove(o);
-                    _context.SaveChanges();
+                    return Forbid();
                 }
+
+                _context.Odgovori.Remove(o);
+                _context.SaveChanges();
             }
             catch (DbUpdateException)
             {
@@ -234,6 +286,11 @@ namespace SharpMindApi.Controllers
 
                 if (odg == null) return NotFound();
 
+                if (!MozeDaMenjaPitanje(odg.PitanjeId))
+                {
+                    return Forbid();
+                }
+
                 ViewBag.TekstPitanja = odg.Pitanje?.PitanjeTekst ?? "Nepoznato pitanje (Pitanje je obrisano)";
 
                 PopuniListe();
@@ -253,12 +310,20 @@ namespace SharpMindApi.Controllers
         {
             ModelState.Remove("Pitanje");
 
+            var postojeci = _context.Odgovori.Find(odg.OdgovorId);
+            if (postojeci == null) return NotFound();
+
+            if (!MozeDaMenjaPitanje(postojeci.PitanjeId))
+            {
+                return Forbid();
+            }
+
             if (odg.OdgovorTekst != null)
             {
                 odg.OdgovorTekst = odg.OdgovorTekst.Trim();
             }
 
-            var duplikat = _context.Odgovori.Any(o => o.PitanjeId == odg.PitanjeId && o.OdgovorTekst.Trim() == odg.OdgovorTekst && o.OdgovorId != odg.OdgovorId);
+            var duplikat = _context.Odgovori.Any(o => o.PitanjeId == postojeci.PitanjeId && o.OdgovorTekst.Trim() == odg.OdgovorTekst && o.OdgovorId != odg.OdgovorId);
             if (duplikat)
             {
                 ModelState.AddModelError("OdgovorTekst", "Ovaj tekst odgovora već postoji za izabrano pitanje.");
@@ -268,7 +333,9 @@ namespace SharpMindApi.Controllers
             {
                 try
                 {
-                    _context.Update(odg);
+                    postojeci.OdgovorTekst = odg.OdgovorTekst;
+                    postojeci.OdgovorTacnost = odg.OdgovorTacnost;
+
                     _context.SaveChanges();
                     return RedirectToAction("Objedinjeno", "Pitanja");
                 }
@@ -278,7 +345,7 @@ namespace SharpMindApi.Controllers
                 }
             }
 
-            var pitanje = _context.Pitanja.Find(odg.PitanjeId);
+            var pitanje = _context.Pitanja.Find(postojeci.PitanjeId);
             ViewBag.TekstPitanja = pitanje?.PitanjeTekst ?? "Nepoznato pitanje";
 
             PopuniListe();
@@ -290,6 +357,11 @@ namespace SharpMindApi.Controllers
         {
             try
             {
+                if (pitanjeId.HasValue && !MozeDaMenjaPitanje(pitanjeId.Value))
+                {
+                    return Forbid();
+                }
+
                 PopuniListe();
                 var model = new Odgovor();
 
@@ -319,6 +391,11 @@ namespace SharpMindApi.Controllers
         public IActionResult NoviOdgovor(Odgovor odgovor)
         {
             ModelState.Remove("Pitanje");
+
+            if (!MozeDaMenjaPitanje(odgovor.PitanjeId))
+            {
+                return Forbid();
+            }
 
             if (odgovor.OdgovorTekst != null)
             {
@@ -367,6 +444,11 @@ namespace SharpMindApi.Controllers
                 var odgovor = _context.Odgovori.Find(id);
                 if (odgovor == null) return NotFound();
 
+                if (!MozeDaMenjaPitanje(odgovor.PitanjeId))
+                {
+                    return Forbid();
+                }
+
                 var pitanje = _context.Pitanja.Find(odgovor.PitanjeId);
                 ViewBag.TekstPitanja = pitanje?.PitanjeTekst ?? "Nepoznato pitanje";
 
@@ -386,11 +468,19 @@ namespace SharpMindApi.Controllers
         {
             ModelState.Remove("Pitanje");
 
+            var postojeci = _context.Odgovori.Find(odgovor.OdgovorId);
+            if (postojeci == null) return NotFound();
+
+            if (!MozeDaMenjaPitanje(postojeci.PitanjeId))
+            {
+                return Forbid();
+            }
+
             if (odgovor != null && !string.IsNullOrWhiteSpace(odgovor.OdgovorTekst))
             {
                 odgovor.OdgovorTekst = odgovor.OdgovorTekst.Trim();
 
-                bool postoji = _context.Odgovori.Any(o => o.PitanjeId == odgovor.PitanjeId
+                bool postoji = _context.Odgovori.Any(o => o.PitanjeId == postojeci.PitanjeId
                                                               && o.OdgovorTekst.ToLower() == odgovor.OdgovorTekst.ToLower()
                                                               && o.OdgovorId != odgovor.OdgovorId);
                 if (postoji)
@@ -403,7 +493,9 @@ namespace SharpMindApi.Controllers
             {
                 try
                 {
-                    _context.Odgovori.Update(odgovor);
+                    postojeci.OdgovorTekst = odgovor.OdgovorTekst;
+                    postojeci.OdgovorTacnost = odgovor.OdgovorTacnost;
+
                     _context.SaveChanges();
                     return RedirectToAction("Objedinjeno", "Pitanja");
                 }
@@ -419,18 +511,7 @@ namespace SharpMindApi.Controllers
 
             try
             {
-                int stvarniPitanjeId = odgovor.PitanjeId;
-                if (stvarniPitanjeId == 0 && odgovor.OdgovorId != 0)
-                {
-                    var originalniOdgovor = _context.Odgovori.AsNoTracking().FirstOrDefault(o => o.OdgovorId == odgovor.OdgovorId);
-                    if (originalniOdgovor != null)
-                    {
-                        stvarniPitanjeId = originalniOdgovor.PitanjeId;
-                        odgovor.PitanjeId = stvarniPitanjeId;
-                    }
-                }
-
-                var pitanje = _context.Pitanja.Find(stvarniPitanjeId);
+                var pitanje = _context.Pitanja.Find(postojeci.PitanjeId);
                 ViewBag.TekstPitanja = pitanje?.PitanjeTekst ?? "Nepoznato pitanje";
             }
             catch { }
@@ -446,11 +527,15 @@ namespace SharpMindApi.Controllers
             try
             {
                 var o = _context.Odgovori.Find(id);
-                if (o != null)
+                if (o == null) return NotFound();
+
+                if (!MozeDaMenjaPitanje(o.PitanjeId))
                 {
-                    _context.Odgovori.Remove(o);
-                    _context.SaveChanges();
+                    return Forbid();
                 }
+
+                _context.Odgovori.Remove(o);
+                _context.SaveChanges();
             }
             catch (DbUpdateException)
             {
@@ -465,7 +550,16 @@ namespace SharpMindApi.Controllers
 
         private void PopuniListe()
         {
-            ViewBag.Pitanja = _context.Pitanja.OrderBy(p => p.PitanjeTekst).ToList();
+            var trenutniKorisnik = GetTrenutniKorisnik();
+            bool isAdmin = trenutniKorisnik?.Uloga?.UlogaNaziv == "Admin";
+
+            var pitanjaQuery = _context.Pitanja.AsQueryable();
+            if (!isAdmin && trenutniKorisnik != null)
+            {
+                pitanjaQuery = pitanjaQuery.Where(p => p.KorisnikId == trenutniKorisnik.KorisnikId);
+            }
+
+            ViewBag.Pitanja = pitanjaQuery.OrderBy(p => p.PitanjeTekst).ToList();
         }
     }
 }

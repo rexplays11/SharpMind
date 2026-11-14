@@ -6,10 +6,11 @@ using SharpMind.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace SharpMind.Controllers
 {
-    [Authorize(Roles = "Admin, Profesor")] 
+    [Authorize]
     public class LekcijeController : Controller
     {
         private readonly SharpMindContext _context;
@@ -19,16 +20,32 @@ namespace SharpMind.Controllers
             _context = context;
         }
 
+        private Korisnik GetTrenutniKorisnik()
+        {
+            return _context.Korisnici
+                .Include(k => k.Uloga)
+                .FirstOrDefault(k => k.KorisnikIme == User.Identity.Name);
+        }
+
+        private async Task<Korisnik> GetTrenutniKorisnikAsync()
+        {
+            return await _context.Korisnici
+                .Include(k => k.Uloga)
+                .FirstOrDefaultAsync(k => k.KorisnikIme == User.Identity.Name);
+        }
+
         // INDEX METODA (Prikaz i upravljanje listom)
 
-        // GET: /Lekcije
-        [AllowAnonymous] 
+        [Authorize(Roles = "Admin, Profesor")]
         public IActionResult Index(string sortOrder, int page = 1, int pageSize = 25)
         {
             try
             {
                 if (pageSize < 1) pageSize = 25;
 
+                var trenutniKorisnik = GetTrenutniKorisnik();
+                ViewBag.IsAdmin = trenutniKorisnik?.Uloga?.UlogaNaziv == "Admin";
+                ViewBag.TrenutniKorisnikId = trenutniKorisnik?.KorisnikId;
 
                 ViewBag.IdSortParm = sortOrder == "id_asc" ? "id_desc" : "id_asc";
                 ViewBag.CurrentSort = sortOrder;
@@ -72,16 +89,14 @@ namespace SharpMind.Controllers
             }
         }
 
+        // CREATE (POST): 
         [Authorize(Roles = "Admin, Profesor")]
         public async Task<IActionResult> Create(int? poglavljeId)
         {
             try
             {
-                var ulogovaniKorisnik = await _context.Korisnici
-                    .Include(k => k.Uloga)
-                    .FirstOrDefaultAsync(k => k.KorisnikIme == User.Identity.Name);
-
-                if (ulogovaniKorisnik == null) return RedirectToAction("Login", "Nalog");
+                var ulogovaniKorisnik = await GetTrenutniKorisnikAsync();
+                if (ulogovaniKorisnik == null) return RedirectToAction("Login", "Account");
 
                 await PopuniListeLekcijaAsync();
 
@@ -100,7 +115,6 @@ namespace SharpMind.Controllers
             }
         }
 
-        // CREATE (POST): 
         [HttpPost]
         [Authorize(Roles = "Admin, Profesor")]
         [ValidateAntiForgeryToken]
@@ -110,7 +124,7 @@ namespace SharpMind.Controllers
             ModelState.Remove(nameof(lekcija.Potpoglavlje));
             ModelState.Remove(nameof(lekcija.Nivo));
             ModelState.Remove(nameof(lekcija.Kreator));
-            ModelState.Remove(nameof(lekcija.KorisnikId)); 
+            ModelState.Remove(nameof(lekcija.KorisnikId));
 
             if (lekcija.LekcijaNaslov != null)
             {
@@ -130,13 +144,11 @@ namespace SharpMind.Controllers
             {
                 try
                 {
-                    var username = User.Identity?.Name;
-                    var ulogovaniKorisnik = await _context.Korisnici.FirstOrDefaultAsync(k => k.KorisnikIme == username);
+                    var ulogovaniKorisnik = await GetTrenutniKorisnikAsync();
+                    if (ulogovaniKorisnik == null) return RedirectToAction("Login", "Account");
 
-                    if (ulogovaniKorisnik != null)
-                    {
-                        lekcija.KorisnikId = ulogovaniKorisnik.KorisnikId;
-                    }
+
+                    lekcija.KorisnikId = ulogovaniKorisnik.KorisnikId;
 
                     _context.Lekcije.Add(lekcija);
                     await _context.SaveChangesAsync();
@@ -161,14 +173,23 @@ namespace SharpMind.Controllers
             return View(lekcija);
         }
 
-
         // GET: /Lekcije/Edit/5
+        [Authorize(Roles = "Admin, Profesor")]
         public IActionResult Edit(int id)
         {
             try
             {
                 var lekcija = _context.Lekcije.Find(id);
                 if (lekcija == null) return NotFound();
+
+                var trenutniKorisnik = GetTrenutniKorisnik();
+                bool isAdmin = trenutniKorisnik?.Uloga?.UlogaNaziv == "Admin";
+
+
+                if (!isAdmin && lekcija.KorisnikId != trenutniKorisnik?.KorisnikId)
+                {
+                    return Forbid();
+                }
 
                 PopuniListe();
                 return View(lekcija);
@@ -179,9 +200,9 @@ namespace SharpMind.Controllers
                 return RedirectToAction(nameof(Index));
             }
         }
-
         // POST: /Lekcije/Edit/5
         [HttpPost]
+        [Authorize(Roles = "Admin, Profesor")]
         [ValidateAntiForgeryToken]
         public IActionResult Edit(Lekcija lekcija)
         {
@@ -190,11 +211,26 @@ namespace SharpMind.Controllers
             ModelState.Remove("Nivo");
             ModelState.Remove("Kreator");
 
+            var trenutniKorisnik = GetTrenutniKorisnik();
+            var postojeca = _context.Lekcije.Find(lekcija.LekcijaId);
+            if (postojeca == null) return NotFound();
+
+            bool isAdmin = trenutniKorisnik?.Uloga?.UlogaNaziv == "Admin";
+
+
+            if (!isAdmin && postojeca.KorisnikId != trenutniKorisnik?.KorisnikId)
+            {
+                return Forbid();
+            }
+
             if (lekcija.LekcijaNaslov != null)
             {
                 lekcija.LekcijaNaslov = lekcija.LekcijaNaslov.Trim();
             }
-
+            if (lekcija.LekcijaTekst != null)
+            {
+                lekcija.LekcijaTekst = lekcija.LekcijaTekst.Trim();
+            }
 
             if (!string.IsNullOrEmpty(lekcija.LekcijaNaslov) && _context.Lekcije.Any(l => l.LekcijaNaslov.ToLower() == lekcija.LekcijaNaslov.ToLower() && l.LekcijaId != lekcija.LekcijaId))
             {
@@ -205,7 +241,18 @@ namespace SharpMind.Controllers
             {
                 try
                 {
-                    _context.Update(lekcija);
+
+                    postojeca.LekcijaNaslov = lekcija.LekcijaNaslov;
+                    postojeca.LekcijaTekst = lekcija.LekcijaTekst;
+                    postojeca.PoglavljeId = lekcija.PoglavljeId;
+                    postojeca.PotpoglavljeId = lekcija.PotpoglavljeId;
+                    postojeca.NivoId = lekcija.NivoId;
+
+                    if (isAdmin && lekcija.KorisnikId > 0)
+                    {
+                        postojeca.KorisnikId = lekcija.KorisnikId;
+                    }
+
                     _context.SaveChanges();
                     return RedirectToAction(nameof(Index));
                 }
@@ -223,8 +270,8 @@ namespace SharpMind.Controllers
             return View(lekcija);
         }
 
-        // GET: /Lekcije/Details/5
-        [AllowAnonymous] 
+        // DETAILS 
+
         public IActionResult Details(int id)
         {
             try
@@ -238,20 +285,13 @@ namespace SharpMind.Controllers
 
                 if (lekcija == null) return NotFound();
 
+                var trenutniKorisnik = GetTrenutniKorisnik();
+                ViewBag.IsAdmin = trenutniKorisnik?.Uloga?.UlogaNaziv == "Admin";
+                ViewBag.TrenutniKorisnikId = trenutniKorisnik?.KorisnikId;
 
                 if (!User.IsInRole("Admin") && !User.IsInRole("Profesor"))
                 {
-                    int korisnikNivoId = 1; // Gost
-                    if (User.Identity != null && User.Identity.IsAuthenticated)
-                    {
-                        var username = User.Identity.Name;
-                        var korisnik = _context.Korisnici.FirstOrDefault(k => k.KorisnikIme == username);
-                        if (korisnik != null)
-                        {
-                            korisnikNivoId = korisnik.NivoId;
-                        }
-                    }
-
+                    int korisnikNivoId = trenutniKorisnik?.NivoId ?? 1;
 
                     if (lekcija.NivoId > korisnikNivoId)
                     {
@@ -265,29 +305,36 @@ namespace SharpMind.Controllers
             catch (Exception)
             {
                 TempData["Error"] = "Greška pri učitavanju detalja lekcije.";
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(PregledLekcija));
             }
         }
 
-
-
-        // POST: /Lekcije/Delete/5
+        // DELETE 
+         
         [HttpPost]
+        [Authorize(Roles = "Admin, Profesor")]
         [ValidateAntiForgeryToken]
         public IActionResult Delete(int id)
         {
             try
             {
                 var lekcija = _context.Lekcije.Find(id);
-                if (lekcija != null)
+                if (lekcija == null) return NotFound();
+
+                var trenutniKorisnik = GetTrenutniKorisnik();
+                bool isAdmin = trenutniKorisnik?.Uloga?.UlogaNaziv == "Admin";
+
+                if (!isAdmin && lekcija.KorisnikId != trenutniKorisnik?.KorisnikId)
                 {
-                    _context.Lekcije.Remove(lekcija);
-                    _context.SaveChanges();
+                    return Forbid();
                 }
+
+                _context.Lekcije.Remove(lekcija);
+                _context.SaveChanges();
             }
             catch (DbUpdateException)
             {
-                TempData["Error"] = "Lekcija ne može biti obrisan jer je povezana sa drugim podacima u aplikaciji.";
+                TempData["Error"] = "Lekcija ne može biti obrisana jer je povezana sa drugim podacima u aplikaciji.";
             }
             catch (Exception)
             {
@@ -296,10 +343,9 @@ namespace SharpMind.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // OSTALE METODE (Pomoćne i sporedne akcije)
 
-        // GET: /Lekcije/Lista
-        [AllowAnonymous]
+        // OSTALE METODE
+
         public IActionResult Lista(int? potpoglavljeId)
         {
             try
@@ -323,9 +369,7 @@ namespace SharpMind.Controllers
             }
         }
 
-        // GET: /Lekcije/GetPoglavlja
         [HttpGet]
-        [AllowAnonymous]
         public IActionResult GetPoglavlja()
         {
             try
@@ -341,9 +385,7 @@ namespace SharpMind.Controllers
             }
         }
 
-        // GET: /Lekcije/GetPotpoglavlja?poglavljeId=5
         [HttpGet]
-        [AllowAnonymous]
         public IActionResult GetPotpoglavlja(int poglavljeId)
         {
             try
@@ -359,30 +401,23 @@ namespace SharpMind.Controllers
                 return BadRequest("Nije moguće učitati potpoglavlja.");
             }
         }
-        // GET: /Lekcije/PregledLekcija
-        [AllowAnonymous]
+
+        // GET: /Lekcije/PregledLekcija 
         public IActionResult PregledLekcija()
         {
             try
             {
+                var trenutniKorisnik = GetTrenutniKorisnik();
+                int korisnikNivoId = trenutniKorisnik?.NivoId ?? 1;
 
-                int korisnikNivoId = 1;
-                if (User.Identity != null && User.Identity.IsAuthenticated)
-                {
-                    var username = User.Identity.Name;
-                    var korisnik = _context.Korisnici.FirstOrDefault(k => k.KorisnikIme == username);
-                    if (korisnik != null)
-                    {
-                        korisnikNivoId = korisnik.NivoId;
-                    }
-                }
                 ViewBag.KorisnikNivoId = korisnikNivoId;
-
+                ViewBag.IsAdmin = trenutniKorisnik?.Uloga?.UlogaNaziv == "Admin";
+                ViewBag.TrenutniKorisnikId = trenutniKorisnik?.KorisnikId;
 
                 var struktura = _context.Poglavlja
                     .Include(p => p.Potpoglavlja)
                         .ThenInclude(sub => sub.Lekcije)
-                            .ThenInclude(l => l.Nivo) 
+                            .ThenInclude(l => l.Nivo)
                     .ToList();
 
                 return View(struktura);
@@ -394,7 +429,8 @@ namespace SharpMind.Controllers
             }
         }
 
-        // GET: /Lekcije/PregledLekcijeDodaj
+        // GET: /Lekcije/PregledLekcijeDodaj 
+        [Authorize(Roles = "Admin, Profesor")]
         public IActionResult PregledLekcijeDodaj(int potpoglavljeId, int poglavljeId)
         {
             try
@@ -421,8 +457,9 @@ namespace SharpMind.Controllers
             }
         }
 
-        // POST: /Lekcije/PregledLekcijeDodaj
+        // POST: /Lekcije/PregledLekcijeDodaj 
         [HttpPost]
+        [Authorize(Roles = "Admin, Profesor")]
         [ValidateAntiForgeryToken]
         public IActionResult PregledLekcijeDodaj(Lekcija lekcija)
         {
@@ -449,13 +486,10 @@ namespace SharpMind.Controllers
             {
                 try
                 {
-                    var username = User.Identity?.Name;
-                    var korisnik = _context.Korisnici.FirstOrDefault(k => k.KorisnikIme == username);
+                    var korisnik = GetTrenutniKorisnik();
+                    if (korisnik == null) return RedirectToAction("Login", "Account");
 
-                    if (korisnik != null)
-                    {
-                        lekcija.KorisnikId = korisnik.KorisnikId;
-                    }
+                    lekcija.KorisnikId = korisnik.KorisnikId;
 
                     _context.Lekcije.Add(lekcija);
                     _context.SaveChanges();
@@ -480,25 +514,37 @@ namespace SharpMind.Controllers
             return View(lekcija);
         }
 
-     // GET: /Lekcije/PregledLekcijeIzmeni/5
-public IActionResult PregledLekcijeIzmeni(int id)
-{
-    try
-    {
-        var lekcija = _context.Lekcije.Find(id);
-        if (lekcija == null) return NotFound();
+        // GET: /Lekcije/PregledLekcijeIzmeni/5 
+        [Authorize(Roles = "Admin, Profesor")]
+        public IActionResult PregledLekcijeIzmeni(int id)
+        {
+            try
+            {
+                var lekcija = _context.Lekcije.Find(id);
+                if (lekcija == null) return NotFound();
 
-        PopuniListe();
-        return View(lekcija);
-    }
-    catch (Exception)
-    {
-        TempData["Error"] = "Sistem ne može da otvori izmenu izabrane lekcije.";
-        return RedirectToAction(nameof(Index));
-    }
-}
+                var trenutniKorisnik = GetTrenutniKorisnik();
+                bool isAdmin = trenutniKorisnik?.Uloga?.UlogaNaziv == "Admin";
+
+
+                if (!isAdmin && lekcija.KorisnikId != trenutniKorisnik?.KorisnikId)
+                {
+                    return Forbid();
+                }
+
+                PopuniListe();
+                return View(lekcija);
+            }
+            catch (Exception)
+            {
+                TempData["Error"] = "Sistem ne može da otvori izmenu izabrane lekcije.";
+                return RedirectToAction(nameof(PregledLekcija));
+            }
+        }
+
         // POST: /Lekcije/PregledLekcijeIzmeni/5
         [HttpPost]
+        [Authorize(Roles = "Admin, Profesor")]
         [ValidateAntiForgeryToken]
         public IActionResult PregledLekcijeIzmeni(Lekcija lekcija)
         {
@@ -507,12 +553,26 @@ public IActionResult PregledLekcijeIzmeni(int id)
             ModelState.Remove("Nivo");
             ModelState.Remove("Kreator");
 
+            var trenutniKorisnik = GetTrenutniKorisnik();
+            var postojeca = _context.Lekcije.Find(lekcija.LekcijaId);
+            if (postojeca == null) return NotFound();
+
+            bool isAdmin = trenutniKorisnik?.Uloga?.UlogaNaziv == "Admin";
+
+            if (!isAdmin && postojeca.KorisnikId != trenutniKorisnik?.KorisnikId)
+            {
+                return Forbid();
+            }
+
             if (lekcija.LekcijaNaslov != null)
             {
                 lekcija.LekcijaNaslov = lekcija.LekcijaNaslov.Trim();
             }
+            if (lekcija.LekcijaTekst != null)
+            {
+                lekcija.LekcijaTekst = lekcija.LekcijaTekst.Trim();
+            }
 
-            // Provera da li neka druga lekcija već koristi ovaj naslov
             if (!string.IsNullOrEmpty(lekcija.LekcijaNaslov) && _context.Lekcije.Any(l => l.LekcijaNaslov.ToLower() == lekcija.LekcijaNaslov.ToLower() && l.LekcijaId != lekcija.LekcijaId))
             {
                 ModelState.AddModelError("LekcijaNaslov", "Lekcija sa ovim naslovom već postoji. Izaberite drugi naslov.");
@@ -522,7 +582,12 @@ public IActionResult PregledLekcijeIzmeni(int id)
             {
                 try
                 {
-                    _context.Update(lekcija);
+                    postojeca.LekcijaNaslov = lekcija.LekcijaNaslov;
+                    postojeca.LekcijaTekst = lekcija.LekcijaTekst;
+                    postojeca.PoglavljeId = lekcija.PoglavljeId;
+                    postojeca.PotpoglavljeId = lekcija.PotpoglavljeId;
+                    postojeca.NivoId = lekcija.NivoId;
+
                     _context.SaveChanges();
 
                     return RedirectToAction(nameof(PregledLekcija));
@@ -541,19 +606,27 @@ public IActionResult PregledLekcijeIzmeni(int id)
             return View(lekcija);
         }
 
-        // POST: /Lekcije/PregledLekcijeObrisi/5
+        // POST: /Lekcije/PregledLekcijeObrisi/5 
         [HttpPost]
-        [ValidateAntiForgeryToken] 
+        [Authorize(Roles = "Admin, Profesor")]
+        [ValidateAntiForgeryToken]
         public IActionResult PregledLekcijeObrisi(int id)
         {
             try
             {
                 var lekcija = _context.Lekcije.Find(id);
-                if (lekcija != null)
+                if (lekcija == null) return NotFound();
+
+                var trenutniKorisnik = GetTrenutniKorisnik();
+                bool isAdmin = trenutniKorisnik?.Uloga?.UlogaNaziv == "Admin";
+
+                if (!isAdmin && lekcija.KorisnikId != trenutniKorisnik?.KorisnikId)
                 {
-                    _context.Lekcije.Remove(lekcija);
-                    _context.SaveChanges();
+                    return Forbid();
                 }
+
+                _context.Lekcije.Remove(lekcija);
+                _context.SaveChanges();
             }
             catch (DbUpdateException)
             {
@@ -565,6 +638,7 @@ public IActionResult PregledLekcijeIzmeni(int id)
             }
             return RedirectToAction(nameof(PregledLekcija));
         }
+
         private async Task PopuniListeLekcijaAsync()
         {
             ViewBag.Poglavlja = await _context.Poglavlja.OrderBy(p => p.PoglavljeNaziv).ToListAsync();
@@ -572,6 +646,7 @@ public IActionResult PregledLekcijeIzmeni(int id)
             ViewBag.Nivoi = await _context.Nivoi.ToListAsync();
             ViewBag.Korisnici = await _context.Korisnici.ToListAsync();
         }
+
         private void PopuniListe()
         {
             ViewBag.Poglavlja = _context.Poglavlja.OrderBy(p => p.PoglavljeNaziv).ToList();

@@ -30,13 +30,13 @@ builder.Services.AddSession(options => {
     options.Cookie.IsEssential = true;
 });
 
-
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
         options.LoginPath = "/Account/Login";
-        options.ExpireTimeSpan = TimeSpan.FromDays(7);
+        options.AccessDeniedPath = "/Account/AccessDenied";
     });
+
 builder.Services.AddHttpClient();
 
 var app = builder.Build();
@@ -49,9 +49,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseStaticFiles();
 app.UseRouting();
-app.UseSession(); 
+
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseSession();
 
 app.MapControllerRoute(
     name: "default",

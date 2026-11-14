@@ -2,6 +2,7 @@
 @{
     ViewData["Title"] = "Izmena lekcije";
     string crimson = "#228B22";
+    bool isAdmin = User.IsInRole("Admin");
 }
 
 <div class="container mt-5">
@@ -48,19 +49,39 @@
 
                         <div class="mb-4">
                             <label for="KorisnikId" class="form-label fw-black text-dark text-uppercase small" style="letter-spacing: 1px;">Autor / Korisnik</label>
-                            <select id="KorisnikId" name="KorisnikId" class="form-select form-select-lg border-2 border-dark shadow-sm" required style="border-radius: 8px;">
-                                <option value="">-- Odaberite Korisnika --</option>
-                                @if (ViewBag.Korisnici != null)
+                            @if (isAdmin)
+                            {
+                                <select id="KorisnikId" name="KorisnikId" class="form-select form-select-lg border-2 border-dark shadow-sm" required style="border-radius: 8px;">
+                                    <option value="">-- Odaberite Korisnika --</option>
+                                    @if (ViewBag.Korisnici != null)
+                                    {
+                                        foreach (var k in ViewBag.Korisnici)
+                                        {
+                                            bool isSelected = Model != null && k.KorisnikId == Model.KorisnikId;
+                                            <option value="@k.KorisnikId" selected="@(isSelected ? "selected" : null)">
+                                                @k.KorisnikIme
+                                            </option>
+                                        }
+                                    }
+                                </select>
+                            }
+                            else
+                            {
+                                string autorIme = User.Identity?.Name ?? "";
+                                if (ViewBag.Korisnici != null && Model != null)
                                 {
                                     foreach (var k in ViewBag.Korisnici)
                                     {
-                                        bool isSelected = Model != null && k.KorisnikId == Model.KorisnikId;
-                                        <option value="@k.KorisnikId" selected="@(isSelected ? "selected" : null)">
-                                            @k.KorisnikIme
-                                        </option>
+                                        if (k.KorisnikId == Model.KorisnikId)
+                                        {
+                                            autorIme = k.KorisnikIme;
+                                            break;
+                                        }
                                     }
                                 }
-                            </select>
+                                <input type="hidden" name="KorisnikId" value="@Model?.KorisnikId" />
+                                <input type="text" class="form-control form-control-lg border-2 border-dark shadow-sm bg-light text-muted" value="@autorIme" disabled style="border-radius: 8px;" />
+                            }
                             @if (ViewData.ModelState["KorisnikId"]?.Errors.Count > 0)
                             {
                                 <span class="text-danger small fw-bold mt-1 d-block">

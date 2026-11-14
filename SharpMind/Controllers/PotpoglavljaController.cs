@@ -19,7 +19,7 @@ namespace SharpMindApi.Controllers
         // INDEX METODA (Prikaz i upravljanje listom)
 
         // GET: /Potpoglavlja
-        [AllowAnonymous]
+        [Authorize]
         public IActionResult Index(int? poglavljeId, string sortOrder, int page = 1, int pageSize = 25)
         {
             try
@@ -242,7 +242,7 @@ namespace SharpMindApi.Controllers
         // OSTALE METODE (Pomoćne i sporedne akcije)
 
         // GET: /Potpoglavlja/PoPoglavlju/5
-        [AllowAnonymous]
+        [Authorize]
         public IActionResult PoPoglavlju(int id)
         {
             try
@@ -268,7 +268,7 @@ namespace SharpMindApi.Controllers
         }
 
         // GET: /Potpoglavlja/PoPotpoglavlju/5
-        [AllowAnonymous]
+        [Authorize]
         public IActionResult PoPotpoglavlju(int id)
         {
             try
